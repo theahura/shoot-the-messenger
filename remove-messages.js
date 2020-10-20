@@ -23,8 +23,9 @@ function unsendAllVisibleMessages() {
 
     const scroller = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
     scroller.scrollTop = 0;
-    while (scroller.childNodes.length > 5) {
-        scroller.removeChild(scroller.lastChild);
+    const removableElementsHolder = scroller.querySelector('[id*=js_1]');
+    while (removableElementsHolder.childNodes.length > 5) {
+        removableElementsHolder.removeChild(removableElementsHolder.lastChild);
     }
 
     setTimeout(unsendAllVisibleMessages, 5000);
