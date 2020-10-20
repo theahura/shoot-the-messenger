@@ -1,4 +1,4 @@
-function unsendAllVisibleMessages(scrollId) {
+function unsendAllVisibleMessages() {
     let more_buttons = document.querySelectorAll('._3058._ui9._hh7._6ybn._s1-._52mr._43by._6ybp._3oh- ._8sop._2rvp._7i2l');
 
     console.log(more_buttons);
@@ -21,11 +21,11 @@ function unsendAllVisibleMessages(scrollId) {
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
 
-    const scroller = document.getElementById(scrollId);
+    const scroller = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
     scroller.scrollTop = 0;
-    while (scroller.childNodes.length > 2) {
+    while (scroller.childNodes.length > 5) {
         scroller.removeChild(scroller.lastChild);
     }
 
-    setTimeout(() => unsendAllVisibleMessages(scrollId), 10000);
+    setTimeout(unsendAllVisibleMessages, 5000);
 }
