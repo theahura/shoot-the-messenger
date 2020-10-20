@@ -21,12 +21,14 @@ function unsendAllVisibleMessages() {
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
 
-    let scroller = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
-    scroller.scrollTop = 0;
-    let removableElementsHolder = scroller.querySelector('[id*=js_1]');
-    while (removableElementsHolder.childNodes.length > 5) {
-        removableElementsHolder.removeChild(removableElementsHolder.lastChild);
-    }
+    try {
+        let scroller_ = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
+        scroller_.scrollTop = 0;
+        let removableElementsHolder_ = scroller_.querySelector('[id*=js_1]');
+        while (removableElementsHolder_.childNodes.length > 5) {
+            removableElementsHolder_.removeChild(removableElementsHolder_.lastChild);
+        }
+    } catch (err) { console.log(err) }
 
     setTimeout(unsendAllVisibleMessages, 5000);
 }
