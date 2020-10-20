@@ -21,9 +21,9 @@ function unsendAllVisibleMessages() {
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
 
-    const scroller = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
+    let scroller = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
     scroller.scrollTop = 0;
-    const removableElementsHolder = scroller.querySelector('[id*=js_1]');
+    let removableElementsHolder = scroller.querySelector('[id*=js_1]');
     while (removableElementsHolder.childNodes.length > 5) {
         removableElementsHolder.removeChild(removableElementsHolder.lastChild);
     }
