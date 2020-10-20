@@ -30,5 +30,5 @@ function unsendAllVisibleMessages() {
         }
     } catch (err) { console.log(err) }
 
-    setTimeout(unsendAllVisibleMessages, 5000);
+    setTimeout(unsendAllVisibleMessages, 500);
 }
