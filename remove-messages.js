@@ -22,6 +22,6 @@ function unsendAllVisibleMessages() {
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
 
-    document.getElementById('js_1v').scrollTop = 0
+    document.getElementById('js_1p').scrollTop = 0
     setTimeout(unsendAllVisibleMessages, 10000);
 }
