@@ -1,17 +1,17 @@
 function unsendAllVisibleMessages() {
     let more_buttons = document.querySelectorAll('._3058._ui9._hh7._6ybn._s1-._52mr._43by._6ybp._3oh- ._8sop._2rvp._7i2l');
-
+​
     console.log(more_buttons);
     for (let more_button of more_buttons) {
       more_button.click();
     }
-
+​
     let remove_buttons = document.getElementsByClassName('_hw5');
     console.log(remove_buttons);
     for (let remove_button of remove_buttons) {
       remove_button.click()
     }
-
+​
     let unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     while(unsend_buttons.length > 0) {
         console.log(unsend_buttons);
@@ -20,15 +20,15 @@ function unsendAllVisibleMessages() {
         }
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
-
+​
     try {
-        let scroller_ = document.querySelector('._5f0v.uiScrollableArea.fade.contentBefore [id*=js_1]');
+        let scroller_ = document.querySelector('._4u-c._1wfr._9hq [id*=js_]');
         scroller_.scrollTop = 0;
         let removableElementsHolder_ = scroller_.querySelector('[id*=js_1]');
         while (removableElementsHolder_.childNodes.length > 5) {
             removableElementsHolder_.removeChild(removableElementsHolder_.lastChild);
         }
     } catch (err) { console.log(err) }
-
-    setTimeout(unsendAllVisibleMessages, 500);
+​
+    setTimeout(unsendAllVisibleMessages, 1000);
 }
