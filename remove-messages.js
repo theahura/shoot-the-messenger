@@ -45,3 +45,11 @@ function unsendAllVisibleMessages() {
     // And then run the whole thing again after 5 seconds for loading.
     setTimeout(unsendAllVisibleMessages, 5000);
 }
+
+// Helper function to scroll to the bottom of the messenger chain.
+function scrollToBottom(counter, limit) {
+  let scroller = document.querySelectorAll('._5f0v .uiScrollableAreaWrap.scrollable')[0];
+  scroller.scrollTop = scroller.scrollHeight;
+  if (counter >= limit) return;
+  setTimeout(() => scrollToBottom(++counter, limit), 500);
+}
