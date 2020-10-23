@@ -2,7 +2,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function unsendAllVisibleMessages() {
+async function unsendAllVisibleMessages() {
     // Click on all ... buttons that let you select 'more' for all messages you sent.
     let more_buttons = document.querySelectorAll('._3058._ui9._hh7._6ybn._s1-._52mr._43by._6ybp._3oh- ._8sop._2rvp._7i2l');
     console.log(more_buttons);
@@ -18,23 +18,26 @@ function unsendAllVisibleMessages() {
       remove_button.click()
     }
 
-    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too. 
+    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too.
     let unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     while(unsend_buttons.length > 0) {
         console.log(unsend_buttons);
         for (let unsend_button of unsend_buttons) {
           unsend_button.click();
-          sleep(2000)
+          await sleep(2000)
         }
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
 
     // Sometimes a remove fails for inexplicable reasons. Remove those...
-    const couldntremoves = document.getElementsByClassName('_3quh _30yy _2t_ _5ixy layerCancel');
-    for (let couldntremove of couldntremoves) {
-      couldntremove.click();
-      sleep(500)
-    } 
+    let couldntremoves = document.getElementsByClassName('_3quh _30yy _2t_ _5ixy layerCancel');
+    while (couldntremoves.length > 0) {
+        for (let couldntremove of couldntremoves) {
+          console.log(couldntremove.click());
+          await sleep(2000)
+        }
+        couldntremoves = document.getElementsByClassName('_3quh _30yy _2t_ _5ixy layerCancel');
+    }
 
     // And try again. If there are no failed attempts at removal, scroll to the top, remove everything else from the DOM to save RAM.
     if (couldntremoves.length === 0) {
