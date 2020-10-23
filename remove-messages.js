@@ -1,3 +1,7 @@
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function unsendAllVisibleMessages() {
     // Click on all ... buttons that let you select 'more' for all messages you sent.
     let more_buttons = document.querySelectorAll('._3058._ui9._hh7._6ybn._s1-._52mr._43by._6ybp._3oh- ._8sop._2rvp._7i2l');
@@ -20,6 +24,7 @@ function unsendAllVisibleMessages() {
         console.log(unsend_buttons);
         for (let unsend_button of unsend_buttons) {
           unsend_button.click();
+          sleep(2000)
         }
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
@@ -28,6 +33,7 @@ function unsendAllVisibleMessages() {
     const couldntremoves = document.getElementsByClassName('_3quh _30yy _2t_ _5ixy layerCancel');
     for (let couldntremove of couldntremoves) {
       couldntremove.click();
+      sleep(500)
     } 
 
     // And try again. If there are no failed attempts at removal, scroll to the top, remove everything else from the DOM to save RAM.
@@ -42,8 +48,12 @@ function unsendAllVisibleMessages() {
         } catch (err) { console.log(err) }
     }
 
-    // And then run the whole thing again after 5 seconds for loading.
-    setTimeout(unsendAllVisibleMessages, 5000);
+    // And then run the whole thing again after 500ms for loading. 5 minutes if there's rate limiting.
+    if (remove_buttons.length === 0) {
+      setTimeout(unsendAllVisibleMessages, 500);
+    } else {
+      setTimeout(unsendAllVisibleMessages, 5000);
+    }
 }
 
 // Helper function to scroll to the bottom of the messenger chain.
