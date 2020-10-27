@@ -18,13 +18,13 @@ async function unsendAllVisibleMessages() {
       remove_button.click()
     }
 
-    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too.
+    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too. 
     let unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     while(unsend_buttons.length > 0) {
         console.log(unsend_buttons);
         for (let unsend_button of unsend_buttons) {
           unsend_button.click();
-          await sleep(2000)
+          await sleep(5000)
         }
         unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     }
@@ -54,15 +54,9 @@ async function unsendAllVisibleMessages() {
     // And then run the whole thing again after 500ms for loading. 5 minutes if there's rate limiting.
     if (remove_buttons.length === 0) {
       setTimeout(unsendAllVisibleMessages, 500);
+    } else if (couldntremoves.length !== 0) {
+      setTimeout(unsendAllVisibleMessages, 300000);
     } else {
       setTimeout(unsendAllVisibleMessages, 5000);
-    }
-}
-
-// Helper function to scroll to the bottom of the messenger chain.
-function scrollToBottom(counter, limit) {
-  let scroller = document.querySelectorAll('._5f0v .uiScrollableAreaWrap.scrollable')[0];
-  scroller.scrollTop = scroller.scrollHeight;
-  if (counter >= limit) return;
-  setTimeout(() => scrollToBottom(++counter, limit), 500);
+    } 
 }
