@@ -53,10 +53,25 @@ async function unsendAllVisibleMessages() {
 
     // And then run the whole thing again after 500ms for loading. 5 minutes if there's rate limiting.
     if (remove_buttons.length === 0) {
-      setTimeout(unsendAllVisibleMessages, 500);
+      return 500;
     } else if (couldntremoves.length !== 0) {
-      setTimeout(unsendAllVisibleMessages, 300000);
+      console.log("Got a couldntremove, waiting 5 min to avoid ratelimits.");
+      return 300000;
     } else {
-      setTimeout(unsendAllVisibleMessages, 5000);
+      return 5000;
     } 
+}
+
+async function runner() {
+    while (true) {
+        const sleepTime = await unsendAllVisibleMessages();
+        await sleep(sleepTime);
+    }
+}
+
+function scrollToBottom(counter, limit) {
+  let scroller = document.querySelectorAll('._5f0v .uiScrollableAreaWrap.scrollable')[0];
+  scroller.scrollTop = scroller.scrollHeight;
+  if (counter >= limit) return;
+  setTimeout(() => scrollToBottom(++counter, limit), 500);
 }
