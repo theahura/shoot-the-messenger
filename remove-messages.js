@@ -62,11 +62,66 @@ async function unsendAllVisibleMessages() {
     } 
 }
 
-async function runner() {
-    while (true) {
+async function runner(count) {
+    for (let i = 0; i < count || !count; ++i) {
+        console.log("Running count:", i);
         const sleepTime = await unsendAllVisibleMessages();
         await sleep(sleepTime);
     }
+    console.log("Completed");
+}
+
+async function enterSearchbar(searchText) {
+    // Get the search bar and set the text to search for.
+    let searchBar = document.querySelector('*[placeholder="Search in Conversation"]');
+    searchBar.focus();
+    searchBar.value = searchText;
+    
+    // Trigger the search.
+    const ke_down = new KeyboardEvent("keydown", {
+        bubbles: true, cancelable: true, keyCode: 13
+    });
+    searchBar.dispatchEvent(ke_down);
+
+    const ke_up = new KeyboardEvent("keyup", {
+        bubbles: true, cancelable: true, keyCode: 13
+    });
+    document.body.dispatchEvent(ke_up);
+
+    // Look for the message that best matches searchText.
+    // As a heuristic, we stop at the first message where every highlighted
+    // word also appears in the searchText. This has obvious failure modes,
+    // but is also probably sufficient for natural language.
+    const nextButton = document.getElementsByClassName('_3quh _30yy _2t_ _-19 _b-u')[0];
+    while (true) {
+        await sleep(5000);
+        const highlighted = document.getElementsByClassName("__in");
+        console.log(highlighted)
+        const allInQuery = [...highlighted].map(el => searchText.includes(el.innerHTML));
+        console.log(allInQuery);
+        if (allInQuery.every(v => v === true) && allInQuery.length > 6) break;
+        console.log("Did not find match for search text, continuing");
+        nextButton.click();
+        break;
+    }    
+}
+
+async function longChain() {
+  const searchInConvo = [...document.getElementsByClassName('_3szq')].filter(el => el.innerHTML === "Search in Conversation")[0];
+  searchInConvo.click();
+  let searchBar = $('*[placeholder="Search in Conversation"]');
+  console.log("Set up search bar. Starting removal process.");
+  let searchText = "";
+
+  while(true) {
+     await runner(10);
+     const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
+     for (let el of candidateSearchTexts) {
+         if (el.innerHTML.split(' ').length < 10) continue;
+         searchText = el.innerHTML;
+     }
+     enterSearchbar(searchText);
+  }
 }
 
 function scrollToBottom(counter, limit) {
