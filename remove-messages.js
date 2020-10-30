@@ -109,7 +109,7 @@ async function enterSearchbar(searchText) {
 async function longChain() {
   const searchInConvo = [...document.getElementsByClassName('_3szq')].filter(el => el.innerHTML === "Search in Conversation")[0];
   searchInConvo.click();
-  let searchBar = $('*[placeholder="Search in Conversation"]');
+  let searchBar = document.querySelector('*[placeholder="Search in Conversation"]');
   console.log("Set up search bar. Starting removal process.");
   let searchText = "";
 
