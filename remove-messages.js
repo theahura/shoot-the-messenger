@@ -108,7 +108,6 @@ async function enterSearchbar(searchText) {
         if (allInQuery.every(v => v === true) && allInQuery.length >= expectedMatcherLength) break;
         console.log("Did not find match for search text, continuing");
         nextButton.click();
-        break;
     }    
     console.log("Got the closest match for search text.");
 }
