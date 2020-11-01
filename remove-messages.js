@@ -98,13 +98,14 @@ async function enterSearchbar(searchText) {
     // word also appears in the searchText. This has obvious failure modes,
     // but is also probably sufficient for natural language.
     const nextButton = document.getElementsByClassName('_3quh _30yy _2t_ _-19 _b-u')[0];
+    const expectedMatcherLength = searchText.split(' ').filter(word => word.length > 3).length
     while (true) {
         await sleep(5000);
         const highlighted = document.getElementsByClassName("__in");
         console.log(highlighted)
         const allInQuery = [...highlighted].map(el => searchText.includes(el.innerHTML));
         console.log(allInQuery);
-        if (allInQuery.every(v => v === true) && allInQuery.length >= 6) break;
+        if (allInQuery.every(v => v === true) && allInQuery.length >= expectedMatcherLength) break;
         console.log("Did not find match for search text, continuing");
         nextButton.click();
         break;
@@ -125,7 +126,7 @@ async function longChain(count, runnerCount) {
      await runner(actualRunnerCount);
      const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
      for (let el of candidateSearchTexts) {
-         if (el.textContent.split(' ').length < 6) continue;
+         if (el.textContent.split(' ').filter(word => word.length > 3).length < 5) continue;
          if (el.textContent === searchText) continue;
          searchText = el.textContent;
      }
