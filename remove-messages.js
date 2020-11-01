@@ -41,6 +41,13 @@ async function unsendAllVisibleMessages() {
 
     // And try again. If there are no failed attempts at removal, scroll to the top, remove everything else from the DOM to save RAM.
     if (couldntremoves.length === 0) {
+        // Check to see if we need to hit the 'Load More' button.
+        const maybeLoaders = document.getElementsByClassName('_3quh _30yy _2t_ _41jf');
+        if (maybeLoaders.length > 0) {
+          maybeLoaders[0].click();
+          await sleep(2000);
+        }
+
         try {
             let scroller_ = document.querySelector('._4u-c._1wfr._9hq [id*=js_]');
             scroller_.scrollTop = 0;
@@ -106,20 +113,28 @@ async function enterSearchbar(searchText) {
     }    
 }
 
-async function longChain() {
+async function longChain(count, runnerCount) {
   const searchInConvo = [...document.getElementsByClassName('_3szq')].filter(el => el.innerHTML === "Search in Conversation")[0];
-  searchInConvo.click();
   let searchBar = document.querySelector('*[placeholder="Search in Conversation"]');
+   searchInConvo.click();
   console.log("Set up search bar. Starting removal process.");
   let searchText = "";
-
-  while(true) {
-     await runner(10);
+  const actualRunnerCount = runnerCount ? runnerCount : 10;
+  
+  for (let i = 0; i < count || !count; ++i) {
+     console.log("On run: ", i);
+     await runner(actualRunnerCount);
      const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
      for (let el of candidateSearchTexts) {
-         if (el.innerHTML.split(' ').length < 10) continue;
-         searchText = el.innerHTML;
+         if (el.textContent.split(' ').length < 10) continue;
+         searchText = el.textContent;
      }
+     console.log("Resetting search bar.");
+     searchInConvo.click();
+     await sleep(2000);
+     searchInConvo.click();
+     await sleep(2000);
+     console.log("Searching for: ", searchText);
      enterSearchbar(searchText);
   }
 }
