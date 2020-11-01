@@ -17,6 +17,7 @@ async function unsendAllVisibleMessages() {
       if (remove_button.textContent !== 'Remove') continue;
       remove_button.click()
     }
+    await sleep(2000);
 
     // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too. 
     let unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
