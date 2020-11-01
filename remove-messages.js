@@ -47,16 +47,16 @@ async function unsendAllVisibleMessages() {
         if (maybeLoaders.length > 0) {
           maybeLoaders[0].click();
           await sleep(2000);
+        } else {
+            try {
+                let scroller_ = document.querySelector('._4u-c._1wfr._9hq [id*=js_]');
+                scroller_.scrollTop = 0;
+                let removableElementsHolder_ = document.querySelector('[aria-label=Messages').querySelector('[id*=js_1]');
+                while (removableElementsHolder_.childNodes.length > 5) {
+                    removableElementsHolder_.removeChild(removableElementsHolder_.lastChild);
+                }
+            } catch (err) { console.log(err) }
         }
-
-        try {
-            let scroller_ = document.querySelector('._4u-c._1wfr._9hq [id*=js_]');
-            scroller_.scrollTop = 0;
-            let removableElementsHolder_ = document.querySelector('[aria-label=Messages').querySelector('[id*=js_1]');
-            while (removableElementsHolder_.childNodes.length > 5) {
-                removableElementsHolder_.removeChild(removableElementsHolder_.lastChild);
-            }
-        } catch (err) { console.log(err) }
     }
 
     // And then run the whole thing again after 500ms for loading. 5 minutes if there's rate limiting.
@@ -125,11 +125,20 @@ async function longChain(count, runnerCount) {
      console.log("On run: ", i);
      await runner(actualRunnerCount);
      const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
-     for (let el of candidateSearchTexts) {
-         if (el.textContent.split(' ').filter(word => word.length > 3).length < 5) continue;
-         if (el.textContent === searchText) continue;
-         searchText = el.textContent;
+     for (let j = 5; j > 0; ++j) {
+         console.log("Looking for messages with size: ", j);
+         let newSearchText = searchText;
+         for (let el of candidateSearchTexts) {
+             if (el.textContent.split(' ').filter(word => word.length > 3).length < j) continue;
+             if (el.textContent === searchText) continue;
+             newSearchText = el.textContent;
+         }
+         if (newSearchText !== searchText) {
+           searchText = newSearchText;
+           break;
+         }
      }
+
      console.log("Resetting search bar.");
      searchInConvo.click();
      searchInConvo.click();
