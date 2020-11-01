@@ -131,6 +131,7 @@ async function longChain(count, runnerCount) {
          for (let el of candidateSearchTexts) {
              console.log("Checking candidate: ", el.textContent);
              if (el.textContent === searchText) continue;
+             if (el.textContent.split(' ').filter(word => word.length > 3).length < j) continue;
              newSearchText = el.textContent;
              break;
          }
