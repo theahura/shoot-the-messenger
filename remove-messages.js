@@ -14,7 +14,7 @@ async function unsendAllVisibleMessages() {
     let remove_buttons = document.getElementsByClassName('_hw5');
     console.log(remove_buttons);
     for (let remove_button of remove_buttons) {
-      if (remove_button.innerHTML !== 'Remove') continue;
+      if (remove_button.textContent !== 'Remove') continue;
       remove_button.click()
     }
 
@@ -103,7 +103,7 @@ async function enterSearchbar(searchText) {
         console.log(highlighted)
         const allInQuery = [...highlighted].map(el => searchText.includes(el.innerHTML));
         console.log(allInQuery);
-        if (allInQuery.every(v => v === true) && allInQuery.length > 6) break;
+        if (allInQuery.every(v => v === true) && allInQuery.length >= 6) break;
         console.log("Did not find match for search text, continuing");
         nextButton.click();
         break;
@@ -124,7 +124,7 @@ async function longChain(count, runnerCount) {
      await runner(actualRunnerCount);
      const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
      for (let el of candidateSearchTexts) {
-         if (el.textContent.split(' ').length < 5) continue;
+         if (el.textContent.split(' ').length < 6) continue;
          if (el.textContent === searchText) continue;
          searchText = el.textContent;
      }
