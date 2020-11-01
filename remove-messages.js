@@ -18,7 +18,7 @@ async function unsendAllVisibleMessages() {
       remove_button.click()
     }
 
-    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too. 
+    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too.
     let unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     while(unsend_buttons.length > 0) {
         console.log(unsend_buttons);
@@ -33,8 +33,8 @@ async function unsendAllVisibleMessages() {
     let couldntremoves = document.getElementsByClassName('_3quh _30yy _2t_ _5ixy layerCancel');
     while (couldntremoves.length > 0) {
         for (let couldntremove of couldntremoves) {
-          console.log(couldntremove.click());
-          await sleep(2000)
+          couldntremove.click();
+          await sleep(200)
         }
         couldntremoves = document.getElementsByClassName('_3quh _30yy _2t_ _5ixy layerCancel');
     }
@@ -51,7 +51,7 @@ async function unsendAllVisibleMessages() {
         try {
             let scroller_ = document.querySelector('._4u-c._1wfr._9hq [id*=js_]');
             scroller_.scrollTop = 0;
-            let removableElementsHolder_ = scroller_.querySelector('[id*=js_1]');
+            let removableElementsHolder_ = document.querySelector('[aria-label=Messages').querySelector('[id*=js_1]');
             while (removableElementsHolder_.childNodes.length > 5) {
                 removableElementsHolder_.removeChild(removableElementsHolder_.lastChild);
             }
@@ -61,9 +61,6 @@ async function unsendAllVisibleMessages() {
     // And then run the whole thing again after 500ms for loading. 5 minutes if there's rate limiting.
     if (remove_buttons.length === 0) {
       return 500;
-    } else if (couldntremoves.length !== 0) {
-      console.log("Got a couldntremove, waiting 5 min to avoid ratelimits.");
-      return 300000;
     } else {
       return 5000;
     } 
@@ -111,12 +108,13 @@ async function enterSearchbar(searchText) {
         nextButton.click();
         break;
     }    
+    console.log("Got the closest match for search text.");
 }
 
 async function longChain(count, runnerCount) {
   const searchInConvo = [...document.getElementsByClassName('_3szq')].filter(el => el.innerHTML === "Search in Conversation")[0];
-  let searchBar = document.querySelector('*[placeholder="Search in Conversation"]');
    searchInConvo.click();
+  await sleep(2000);
   console.log("Set up search bar. Starting removal process.");
   let searchText = "";
   const actualRunnerCount = runnerCount ? runnerCount : 10;
@@ -126,16 +124,15 @@ async function longChain(count, runnerCount) {
      await runner(actualRunnerCount);
      const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
      for (let el of candidateSearchTexts) {
-         if (el.textContent.split(' ').length < 10) continue;
+         if (el.textContent.split(' ').length < 5) continue;
          searchText = el.textContent;
      }
      console.log("Resetting search bar.");
      searchInConvo.click();
-     await sleep(2000);
      searchInConvo.click();
-     await sleep(2000);
+     await sleep(4000);
      console.log("Searching for: ", searchText);
-     enterSearchbar(searchText);
+     await enterSearchbar(searchText);
   }
 }
 
