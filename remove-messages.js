@@ -4,7 +4,7 @@ function sleep(ms) {
 
 async function unsendAllVisibleMessages() {
     // Click on all ... buttons that let you select 'more' for all messages you sent.
-    let more_buttons = document.querySelectorAll('._3058._ui9._hh7._6ybn._s1-._52mr._43by._6ybp._3oh- ._8sop._2rvp._7i2l');
+    let more_buttons = document.querySelectorAll('[data-tooltip-position=right] [aria-label=More]');
     console.log(more_buttons);
     for (let more_button of more_buttons) {
       more_button.click();
