@@ -18,7 +18,7 @@ async function unsendAllVisibleMessages() {
       remove_button.click()
     }
 
-    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too.
+    // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too. 
     let unsend_buttons = document.getElementsByClassName('_3quh _30yy _2t_ _3ay_ _5ixy');
     while(unsend_buttons.length > 0) {
         console.log(unsend_buttons);
@@ -125,6 +125,7 @@ async function longChain(count, runnerCount) {
      const candidateSearchTexts = document.getElementsByClassName('_3oh- _58nk');
      for (let el of candidateSearchTexts) {
          if (el.textContent.split(' ').length < 5) continue;
+         if (el.textContent === searchText) continue;
          searchText = el.textContent;
      }
      console.log("Resetting search bar.");
