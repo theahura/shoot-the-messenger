@@ -128,10 +128,10 @@ async function longChain(count, runnerCount) {
          console.log("Looking for messages with size: ", j);
          let newSearchText = searchText;
          for (let el of candidateSearchTexts) {
-             console.log("Checking candidate: ", el.textContent);
-             if (el.textContent === searchText) continue;
-             if (el.textContent.split(' ').filter(word => word.length > 3).length < j) continue;
-             newSearchText = el.textContent;
+             console.log("Checking candidate: ", el.innerText);
+             if (el.innerText === searchText) continue;
+             if (el.innerText.split(' ').filter(word => word.length > 3).length < j) continue;
+             newSearchText = el.innerText;
              break;
          }
          if (newSearchText !== searchText) {
