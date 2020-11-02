@@ -105,7 +105,7 @@ async function enterSearchbar(searchText) {
         console.log(highlighted)
         const allInQuery = [...highlighted].map(el => searchText.includes(el.innerHTML));
         console.log(allInQuery);
-        if (allInQuery.every(v => v === true) && allInQuery.length >= expectedMatcherLength) break;
+        if (allInQuery.filter(Boolean).length >= expectedMatcherLength) break;
         console.log("Did not find match for search text, continuing");
         nextButton.click();
     }    
