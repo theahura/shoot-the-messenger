@@ -103,21 +103,32 @@
   }
 
   async function enterSearchbar(searchText) {
-    // Start by rebooting the search bar.
-    console.log("Resetting search bar.");
-    searchInConvo.click();
-    searchInConvo.click();
-    await sleep(4000);
-    console.log("Searching for: ", searchText);
-
     // Get the search bar and set the text to search for.
+    console.log("Set up search bar. Starting removal process.");
+    const searchInConvo = [...document.getElementsByClassName("_3szq")].filter(
+      el => el.innerHTML === "Search in Conversation"
+    )[0];
+
     let searchBar = document.querySelector(
       '*[placeholder="Search in Conversation"]'
     );
+
+    if (searchBar) {
+      // Need to reboot the search bar.
+      console.log("Resetting search bar.");
+      searchInConvo.click();
+      searchInConvo.click();
+      await sleep(2000);
+    } else {
+      // Need to open the search bar.
+      searchInConvo.click();
+      await sleep(2000);
+    }
     searchBar.focus();
     searchBar.value = searchText;
 
     // Trigger the search.
+    console.log("Searching for: ", searchText);
     const ke_down = new KeyboardEvent("keydown", {
       bubbles: true,
       cancelable: true,
@@ -192,12 +203,6 @@
   }
 
   async function longChain(count, runnerCount) {
-    const searchInConvo = [...document.getElementsByClassName("_3szq")].filter(
-      el => el.innerHTML === "Search in Conversation"
-    )[0];
-    searchInConvo.click();
-    await sleep(2000);
-    console.log("Set up search bar. Starting removal process.");
     let searchText = "";
     const actualRunnerCount = runnerCount ? runnerCount : 10;
 
