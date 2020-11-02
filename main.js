@@ -187,7 +187,7 @@
       .filter(text => {
         if (
           text !== searchText &&
-          text.split(/\s+/).filter(word => word.length > 3).length < 5
+          text.split(/\s+/).filter(word => word.length > 3).length > 5
         ) {
           return true;
         }
