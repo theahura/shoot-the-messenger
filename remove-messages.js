@@ -131,7 +131,7 @@ async function longChain(count, runnerCount) {
              console.log("Checking candidate: ", el.innerText);
              if (el.innerText === searchText) continue;
              if (el.innerText.split(/\s+/).filter(word => word.length > 3).length < j) continue;
-             newSearchText = el.innerText;
+             newSearchText = el.innerText.split(/\s+/).slice(0, 15).join(' ');
              break;
          }
          if (newSearchText !== searchText) {
