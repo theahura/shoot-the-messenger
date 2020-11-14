@@ -3,7 +3,8 @@ function sleep(ms) {
 }
 
 async function unsendAllVisibleMessages() {
-  // Click on all ... buttons that let you select 'more' for all messages you sent.
+  // Click on all ... buttons that let you select 'more' for all messages you
+  // sent.
   let more_buttons = document.querySelectorAll(
     'div:not([data-tooltip-content*="Unsent"])[data-tooltip-position="right"] [aria-label="More"]'
   );
@@ -12,7 +13,8 @@ async function unsendAllVisibleMessages() {
     more_button.click();
   }
 
-  // Click on all of the 'remove' popups that appear. There may be other options, like 'Save to Facebook' -- make sure to drop those.
+  // Click on all of the 'remove' popups that appear. There may be other
+  // options, like 'Save to Facebook' -- make sure to drop those.
   let remove_buttons = document.getElementsByClassName("_hw5");
   console.log(remove_buttons);
   for (let remove_button of remove_buttons) {
@@ -21,7 +23,8 @@ async function unsendAllVisibleMessages() {
   }
   await sleep(2000);
 
-  // Each one of those remove buttons will pull up a modal for confirmation. Click all of those modals too.
+  // Each one of those remove buttons will pull up a modal for confirmation.
+  // Click all of those modals too.
   let unsend_buttons = document.getElementsByClassName(
     "_3quh _30yy _2t_ _3ay_ _5ixy"
   );
@@ -50,7 +53,8 @@ async function unsendAllVisibleMessages() {
     );
   }
 
-  // And try again. If there are no failed attempts at removal, scroll to the top, remove everything else from the DOM to save RAM.
+  // And try again. If there are no failed attempts at removal, scroll to the
+  // top, remove everything else from the DOM to save RAM.
   if (couldntremoves.length === 0) {
     // Check to see if we need to hit the 'Load More' button.
     const maybeLoaders = document.getElementsByClassName(
@@ -77,7 +81,8 @@ async function unsendAllVisibleMessages() {
     }
   }
 
-  // And then run the whole thing again after 500ms for loading. 5 minutes if there's rate limiting.
+  // And then run the whole thing again after 500ms for loading. 5 seconds if
+  // there's rate limiting.
   if (remove_buttons.length === 0) {
     return 500;
   } else {

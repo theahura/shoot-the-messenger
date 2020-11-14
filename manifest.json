@@ -27,6 +27,7 @@
     "activeTab",
     "tabs",
     "http://*.messenger.com/*",
-    "https://*.messenger.com/*"
+    "https://*.messenger.com/*",
+    "storage"
   ]
 }

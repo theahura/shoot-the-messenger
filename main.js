@@ -1,4 +1,10 @@
 (function() {
+  STATUS = {
+    CONTINUE: "continue",
+    ERROR: "error",
+    COMPLETE: "complete"
+  };
+
   // Helper functions ----------------------------------------------------------
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -9,7 +15,7 @@
     // Click on all ... buttons that let you select 'more' for all messages you
     // sent.
     let more_buttons = document.querySelectorAll(
-      'div:not([data-tooltip-content*="Unsent"])[data-tooltip-position="right"] [aria-label="More"]'
+      '.clearfix._o46._3erg._3i_m._nd_.direction_ltr.text_align_ltr div:not([data-tooltip-content*="Unsent"]) [aria-label="More"]'
     );
     console.log(more_buttons);
     for (let more_button of more_buttons) {
@@ -27,11 +33,12 @@
     await sleep(2000);
 
     // Each one of those remove buttons will pull up a modal for confirmation.
-    // Click all of those modals too.
+    // Click all of those modals too. If a minute has passed and we're still
+    // pushing modals, keep going; something probably got stuck.
     let unsend_buttons = document.getElementsByClassName(
       "_3quh _30yy _2t_ _3ay_ _5ixy"
     );
-    while (unsend_buttons.length > 0) {
+    for (let i = 0; unsend_buttons.length > 0 || i < 10; ++i) {
       console.log(unsend_buttons);
       for (let unsend_button of unsend_buttons) {
         unsend_button.click();
@@ -63,12 +70,13 @@
       const maybeLoaders = document.getElementsByClassName(
         "_3quh _30yy _2t_ _41jf"
       );
-      if (maybeLoaders.length > 0) {
+      const scroller_ = document.querySelector("._4u-c._1wfr._9hq [id*=js_]");
+      // We should have two load more buttons, unless we've hit the top.
+      if (maybeLoaders.length > 1) {
         maybeLoaders[0].click();
         await sleep(2000);
-      } else {
+      } else if (scroller_ && scroller_.scrollTop !== 0) {
         try {
-          let scroller_ = document.querySelector("._4u-c._1wfr._9hq [id*=js_]");
           scroller_.scrollTop = 0;
           let removableElementsHolder_ = document
             .querySelector("[aria-label=Messages")
@@ -81,49 +89,83 @@
         } catch (err) {
           console.log(err);
         }
+      } else {
+        // There's no Load More button and there's no more scrolling up, so we
+        // probably sucessfully finished. Bubble this info back up.
+        console.log("Reached top of chain.");
+        return { status: STATUS.COMPLETE };
       }
     }
 
     // And then run the whole thing again after 500ms for loading. 5 minutes if
     // there's rate limiting.
     if (remove_buttons.length === 0) {
-      return 500;
+      return { status: STATUS.CONTINUE, data: 500 };
     } else {
-      return 5000;
+      return { status: STATUS.CONTINUE, data: 5000 };
     }
   }
 
   async function runner(count) {
+    console.log("Starting runner removal for N iterations: ", count);
     for (let i = 0; i < count || !count; ++i) {
       console.log("Running count:", i);
       const sleepTime = await unsendAllVisibleMessages();
-      await sleep(sleepTime);
+      if (sleepTime.status === STATUS.CONTINUE) {
+        await sleep(sleepTime.data);
+      } else if (sleepTime.status === STATUS.COMPLETE) {
+        return STATUS.COMPLETE;
+      }
     }
-    console.log("Completed");
+    console.log("Completed run.");
+    return STATUS.CONTINUE;
   }
 
   async function enterSearchbar(searchText) {
-    // Get the search bar and set the text to search for.
+    // Get the search bar and set the text to search for. Make sure things have
+    // actually loaded.
     console.log("Set up search bar. Starting removal process.");
-    const searchInConvo = [...document.getElementsByClassName("_3szq")].filter(
-      el => el.innerHTML === "Search in Conversation"
-    )[0];
+    let searchInConvo = null;
+    for (let i = 0; !searchInConvo || i < 10; ++i) {
+      searchInConvo = [...document.getElementsByClassName("_3szq")].filter(
+        el => el.innerHTML === "Search in Conversation"
+      )[0];
+
+      if (!searchInConvo) await sleep(5000);
+    }
+
+    if (!searchInConvo) {
+      console.log(
+        "Could not find Search In Conversation button after 50 seconds."
+      );
+      return STATUS.ERROR;
+    }
 
     let searchBar = document.querySelector(
       '*[placeholder="Search in Conversation"]'
     );
+    let previousSearch = document.querySelector("._33p7[role=presentation]");
 
-    if (searchBar) {
+    if (searchBar || previousSearch) {
       // Need to reboot the search bar.
-      console.log("Resetting search bar.");
+      console.log(
+        "Resetting search bar. Previous searchbar found: ",
+        searchBar
+      );
       searchInConvo.click();
       searchInConvo.click();
       await sleep(2000);
     } else {
       // Need to open the search bar.
+      console.log("Opening search bar. No searchbar found: ", searchBar);
       searchInConvo.click();
       await sleep(2000);
     }
+
+    // Either way, need to re-query the search bar because we recreated it.
+    searchBar = document.querySelector(
+      '*[placeholder="Search in Conversation"]'
+    );
     searchBar.focus();
     searchBar.value = searchText;
 
@@ -153,6 +195,7 @@
     const expectedMatcherLength = searchText
       .split(/\s+/)
       .filter(word => word.length > 3).length;
+    console.log("Looking for message with N matches: ", expectedMatcherLength);
     for (let i = 0; i < 20; ++i) {
       await sleep(5000);
       const highlighted = document.getElementsByClassName("__in");
@@ -163,13 +206,13 @@
       console.log(allInQuery);
       if (allInQuery.filter(Boolean).length >= expectedMatcherLength) {
         console.log("Got the closest match for search text.");
-        return true;
+        return STATUS.CONTINUE;
       }
       console.log("Did not find match for search text, continuing");
       nextButton.click();
     }
     console.log("Could not find any matches for search: ", searchText);
-    return false;
+    return STATUS.ERROR;
   }
 
   async function getNextSearchText(searchText) {
@@ -177,6 +220,7 @@
     // string. Remove any that are the same as the current searchText or have
     // fewer than 5 words with length greater than 3.
     const candidates = [...document.getElementsByClassName("_3oh- _58nk")];
+    console.log("Candidates: ", candidates);
     const processedCandidates = candidates
       .map(el =>
         el.innerText
@@ -193,32 +237,64 @@
         }
         return false;
       });
+    console.log("Processed candidates: ", processedCandidates);
 
     // Next, reset the search bar to bring us back down to the beginning, and
     // then try and find the next best matching search point.
     for (let candidate of processedCandidates) {
-      if (await enterSearchbar(candidate)) return candidate;
+      console.log("Testing search candidate: ", candidate);
+      if ((await enterSearchbar(candidate)) === STATUS.CONTINUE) {
+        console.log("Found match for candidate: ", candidate);
+        return { status: STATUS.CONTINUE, data: candidate };
+      }
     }
-    return false;
+
+    console.log(
+      "No candidate within list of processedCandidates found.",
+      processedCandidates
+    );
+    return STATUS.ERROR;
   }
 
-  async function longChain(count, runnerCount) {
+  async function longChain(count, runnerCount, prevSearchText) {
     let searchText = "";
-    const actualRunnerCount = runnerCount ? runnerCount : 10;
 
+    if (prevSearchText) {
+      console.log("Got search text: ", prevSearchText);
+      const prevSearchStatus = await enterSearchbar(prevSearchText);
+      if (prevSearchStatus === STATUS.CONTINUE) {
+        console.log("Successfully reloaded old state. Starting runner.");
+        searchText = prevSearchText;
+      }
+    }
+
+    const actualRunnerCount = runnerCount ? runnerCount : 10;
     for (let i = 0; i < count || !count; ++i) {
       console.log("On run: ", i);
-      await runner(actualRunnerCount);
-      searchText = getNextSearchText(searchText);
-      if (searchText) {
-        console.log("Next search is: ", searchText);
+      const status = await runner(actualRunnerCount);
+      console.log("Runner status: ", status);
+      if (status === STATUS.COMPLETE) return { status: status };
+
+      const maybeSearchText = await getNextSearchText(searchText);
+      if (maybeSearchText.status === STATUS.CONTINUE) {
+        console.log("Next search is: ", maybeSearchText.data);
+        searchText = maybeSearchText.data;
       } else {
         console.log(
           "Encountered error. All messages may not have been deleted."
         );
-        return;
+
+        // Check one last time to make sure this was in fact an error and not a
+        // reason to clear.
+        console.log("Testing error status.");
+        const maybeStatus = await runner(actualRunnerCount);
+        if (maybeStatus === STATUS.COMPLETE) return { status: maybeStatus };
+        console.log("Confirmed error.");
+
+        return { status: STATUS.ERROR };
       }
     }
+    return { status: STATUS.CONTINUE, data: searchText };
   }
 
   // Scroller functions --------------------------------------------------------
@@ -236,14 +312,51 @@
     }
   }
 
-  chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
+  const currentURL =
+    location.protocol + "//" + location.host + location.pathname;
+
+  chrome.runtime.onMessage.addListener(async function(msg, sender) {
     console.log("Got action: ", msg.action);
+    const tabId = msg.tabId;
     if (msg.action === "REMOVE") {
-      longChain(0, 10);
+      const prevSearchText = msg.prevSearchText
+        ? msg.prevSearchText["nextSearchText"]
+        : null;
+      const maybeSearchText = await longChain(1, 2, prevSearchText);
+      if (maybeSearchText.status === STATUS.COMPLETE) {
+        console.log("Successfully removed all messages. Rebooting.");
+        chrome.runtime.sendMessage({
+          action: "TEMP_DELETE",
+          data: currentURL,
+          response: { tabId: tabId, action: "MARK" }
+        });
+      } else if (maybeSearchText.status === STATUS.CONTINUE) {
+        console.log("Completed runner iteration but did not finish removal.");
+        chrome.runtime.sendMessage({
+          action: "TEMP_STORE",
+          data: { [tabId]: { nextSearchText: maybeSearchText.data } },
+          response: { tabId: tabId, action: "RELOAD" }
+        });
+      } else {
+        console.log("Failed to complete longChain removal.");
+      }
     } else if (msg.action === "SCROLL") {
       scrollToBottom(100);
+    } else if (msg.action === "RELOAD") {
+      window.location = window.location.pathname;
+    } else if (msg.action === "MARK") {
+      chrome.runtime.sendMessage({
+        action: "STORE",
+        data: { [currentURL]: { lastCleared: new Date().toDateString() } },
+        response: { tabId: tabId, action: "RELOAD" }
+      });
     } else {
       console.log("Unknown action.");
     }
+  });
+
+  // Check to see if we need to kick off a removal request.
+  chrome.runtime.sendMessage({
+    action: "CHECK_ALREADY_REMOVING"
   });
 })();
