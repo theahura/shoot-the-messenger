@@ -322,7 +322,7 @@
       const prevSearchText = msg.prevSearchText
         ? msg.prevSearchText["nextSearchText"]
         : null;
-      const maybeSearchText = await longChain(1, 2, prevSearchText);
+      const maybeSearchText = await longChain(10, 10, prevSearchText);
       if (maybeSearchText.status === STATUS.COMPLETE) {
         console.log("Successfully removed all messages. Rebooting.");
         chrome.runtime.sendMessage({
