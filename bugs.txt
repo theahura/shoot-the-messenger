@@ -1,3 +1,12 @@
 
-- Not all messages are being removed -- being deleted by previous runs before
+## Not all messages are being removed -- being deleted by previous runs before
 the remove buttons are clicked?
+
+This is caused by the loadmore button being pressed at the end of a run,
+     after which the next search is selected which may be above a message I sent
+     that had not yet been removed
+
+
+## If a search has a lot of possible hits (> 20?) it doesnt properly resolve to
+     use a different search option. Instead, system tries to keep going, which
+     results in a cryptic failure down the line.

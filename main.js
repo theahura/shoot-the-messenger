@@ -11,13 +11,13 @@
   }
 
   // Removal functions ---------------------------------------------------------
-  async function unsendAllVisibleMessages() {
+  async function unsendAllVisibleMessages(lastRun) {
     // Click on all ... buttons that let you select 'more' for all messages you
     // sent.
     let more_buttons = document.querySelectorAll(
       '.clearfix._o46._3erg._3i_m._nd_.direction_ltr.text_align_ltr div:not([data-tooltip-content*="Unsent"]) [aria-label="More"]'
     );
-    console.log(more_buttons);
+    console.log("Clicking more buttons: ", more_buttons);
     for (let more_button of more_buttons) {
       more_button.click();
     }
@@ -25,7 +25,7 @@
     // Click on all of the 'remove' popups that appear. There may be other
     // options, like 'Save to Facebook' -- make sure to drop those.
     let remove_buttons = document.getElementsByClassName("_hw5");
-    console.log(remove_buttons);
+    console.log("Clicking remove buttons: ", remove_buttons);
     for (let remove_button of remove_buttons) {
       if (remove_button.textContent !== "Remove") continue;
       remove_button.click();
@@ -39,7 +39,7 @@
       "_3quh _30yy _2t_ _3ay_ _5ixy"
     );
     for (let i = 0; unsend_buttons.length > 0 || i < 10; ++i) {
-      console.log(unsend_buttons);
+      console.log("Clicking unsend buttons: ", unsend_buttons);
       for (let unsend_button of unsend_buttons) {
         unsend_button.click();
         await sleep(5000);
@@ -49,11 +49,19 @@
       );
     }
 
-    // Sometimes a remove fails for inexplicable reasons. Remove those...
+    // Sometimes a remove fails for inexplicable reasons, likely rate limting.
+    // Loop until those are gone.
     let couldntremoves = document.getElementsByClassName(
       "_3quh _30yy _2t_ _5ixy layerCancel"
     );
     while (couldntremoves.length > 0) {
+      console.log("Got couldnt remove dialogs: ", couldntremoves);
+      console.log("Waiting 5 minutes.");
+
+      // If we got couldn't removes, its because of rate limiting. Wait 5
+      // minutes before starting up again to see if that clears the issue.
+      await sleep(300000);
+
       for (let couldntremove of couldntremoves) {
         couldntremove.click();
         await sleep(200);
@@ -63,42 +71,41 @@
       );
     }
 
-    // And try again. If there are no failed attempts at removal, scroll to the
-    // top, remove everything else from the DOM to save RAM.
-    if (couldntremoves.length === 0) {
-      // Check to see if we need to hit the 'Load More' button.
-      const maybeLoaders = document.getElementsByClassName(
-        "_3quh _30yy _2t_ _41jf"
-      );
-      const scroller_ = document.querySelector("._4u-c._1wfr._9hq [id*=js_]");
-      // We should have two load more buttons, unless we've hit the top.
-      if (maybeLoaders.length > 1) {
-        maybeLoaders[0].click();
-        await sleep(2000);
-      } else if (scroller_ && scroller_.scrollTop !== 0) {
-        try {
-          scroller_.scrollTop = 0;
-          let removableElementsHolder_ = document
-            .querySelector("[aria-label=Messages")
-            .querySelector("[id*=js_1]");
-          while (removableElementsHolder_.childNodes.length > 5) {
-            removableElementsHolder_.removeChild(
-              removableElementsHolder_.lastChild
-            );
-          }
-        } catch (err) {
-          console.log(err);
-        }
-      } else {
-        // There's no Load More button and there's no more scrolling up, so we
-        // probably sucessfully finished. Bubble this info back up.
-        console.log("Reached top of chain.");
-        return { status: STATUS.COMPLETE };
-      }
+    // If this is the last run before the runner cycle finishes, dont keep
+    // scrolling up.
+    if (lastRun) {
+      return { status: STATUS.CONTINUE, data: 500 };
     }
 
-    // And then run the whole thing again after 500ms for loading. 5 minutes if
-    // there's rate limiting.
+    // Cleaned out all the couldnt remove buttons. Now, check to see if we need
+    // to hit the 'Load More' button or if we just need to scroll up.
+    const maybeLoaders = document.getElementsByClassName(
+      "_3quh _30yy _2t_ _41jf"
+    );
+    const scroller_ = document.querySelector("._4u-c._1wfr._9hq [id*=js_]");
+    if (maybeLoaders.length > 1) {
+      // We should have two load more buttons, unless we've hit the top.
+      console.log("Clicking load more.");
+      maybeLoaders[0].click();
+      await sleep(2000);
+    } else if (scroller_ && scroller_.scrollTop !== 0) {
+      // If we don't have any load more buttons, just try scrolling up.
+      console.log("Trying to scroll up.");
+      try {
+        scroller_.scrollTop = 0;
+      } catch (err) {
+        console.log(err);
+      }
+    } else {
+      // There's no Load More button and there's no more scrolling up, so we
+      // probably sucessfully finished. Bubble this info back up.
+      console.log("Reached top of chain.");
+      return { status: STATUS.COMPLETE };
+    }
+
+    // And then run the whole thing again after 500ms for loading if we didnt
+    // have any removals (to zoom up quickly), or 5s if we did have removals to
+    // avoid any rate limiting.
     if (remove_buttons.length === 0) {
       return { status: STATUS.CONTINUE, data: 500 };
     } else {
@@ -110,7 +117,7 @@
     console.log("Starting runner removal for N iterations: ", count);
     for (let i = 0; i < count || !count; ++i) {
       console.log("Running count:", i);
-      const sleepTime = await unsendAllVisibleMessages();
+      const sleepTime = await unsendAllVisibleMessages(i == count - 1);
       if (sleepTime.status === STATUS.CONTINUE) {
         await sleep(sleepTime.data);
       } else if (sleepTime.status === STATUS.COMPLETE) {
@@ -141,6 +148,8 @@
       return STATUS.ERROR;
     }
 
+    console.log("Got searchInConvo: ", searchInConvo);
+
     let searchBar = document.querySelector(
       '*[placeholder="Search in Conversation"]'
     );
@@ -150,9 +159,11 @@
       // Need to reboot the search bar.
       console.log(
         "Resetting search bar. Previous searchbar found: ",
-        searchBar
+        searchBar,
+        previousSearch
       );
       searchInConvo.click();
+      await sleep(2000);
       searchInConvo.click();
       await sleep(2000);
     } else {
