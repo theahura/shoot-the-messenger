@@ -21,7 +21,9 @@ chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
   chrome.storage.local.get([tabs[0].url], result => {
     if (!result || Object.keys(result).length === 0) return;
     console.log("Found storage for url: ", result);
-    document.getElementById("LastCleared").innerHTML =
-      "Last Cleared: " + result[tabs[0].url]["lastCleared"];
+    if ("lastCleared" in result[tabs[0].url]) {
+      document.getElementById("LastCleared").innerHTML =
+        "Last Cleared: " + result[tabs[0].url]["lastCleared"];
+    }
   });
 });

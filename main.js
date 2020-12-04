@@ -319,38 +319,64 @@
   async function scrollToBottom(limit) {
     for (let i = 0; i < limit; ++i) {
       scrollToBottomHelper();
-      await sleep(500);
+      await sleep(2000);
     }
   }
 
   const currentURL =
     location.protocol + "//" + location.host + location.pathname;
 
-  chrome.runtime.onMessage.addListener(async function(msg, sender) {
-    console.log("Got action: ", msg.action);
-    const tabId = msg.tabId;
-    if (msg.action === "REMOVE") {
-      const prevSearchText = msg.prevSearchText
-        ? msg.prevSearchText["nextSearchText"]
-        : null;
-      const maybeSearchText = await longChain(10, 10, prevSearchText);
-      if (maybeSearchText.status === STATUS.COMPLETE) {
-        console.log("Successfully removed all messages. Rebooting.");
+  async function removeHandler(msg, tabId) {
+    const prevSearchText = msg.prevSearchText
+      ? msg.prevSearchText["nextSearchText"]
+      : null;
+    const maybeSearchText = await longChain(10, 10, prevSearchText);
+    if (maybeSearchText.status === STATUS.COMPLETE) {
+      console.log(
+        "Possibly successfully removed all messages. Running one more confirmation attempt."
+      );
+      const confirmSuccess = await longChain(5, 5, prevSearchText);
+      if (confirmSuccess.status === STATUS.CONTINUE) {
+        console.log("Didnt actually complete. Continuing...");
+        msg["prevSearchText"] = confirmSuccess.data;
+        removeHandler(msg, tabId);
+      } else if (confirmSuccess.status === STATUS.ERROR) {
+        console.log("Failed to complete longChain removal.");
+      } else {
+        console.log("Successful confirmation! All cleared!");
         chrome.runtime.sendMessage({
           action: "TEMP_DELETE",
           data: currentURL,
           response: { tabId: tabId, action: "MARK" }
         });
-      } else if (maybeSearchText.status === STATUS.CONTINUE) {
-        console.log("Completed runner iteration but did not finish removal.");
-        chrome.runtime.sendMessage({
-          action: "TEMP_STORE",
-          data: { [tabId]: { nextSearchText: maybeSearchText.data } },
-          response: { tabId: tabId, action: "RELOAD" }
-        });
-      } else {
-        console.log("Failed to complete longChain removal.");
       }
+    } else if (maybeSearchText.status === STATUS.CONTINUE) {
+      console.log("Completed runner iteration but did not finish removal.");
+      chrome.runtime.sendMessage({
+        action: "STORE",
+        data: { [currentURL]: { nextSearchText: maybeSearchText.data } }
+      });
+      chrome.runtime.sendMessage({
+        action: "TEMP_STORE",
+        data: { [tabId]: { nextSearchText: maybeSearchText.data } },
+        response: { tabId: tabId, action: "RELOAD" }
+      });
+    } else {
+      console.log("Failed to complete longChain removal.");
+    }
+  }
+
+  chrome.runtime.onMessage.addListener(async function(msg, sender) {
+    console.log("Got action: ", msg.action);
+    const tabId = msg.tabId;
+    if (msg.action === "REMOVE") {
+      removeHandler(msg, tabId);
+    } else if (msg.action === "CONFIRM_REMOVE") {
+      const keep_removing = confirm(
+        "Continue removing messages from: " +
+          msg.prevSearchText["nextSearchText"]
+      );
+      if (keep_removing) removeHandler(msg, tabId);
     } else if (msg.action === "SCROLL") {
       scrollToBottom(100);
     } else if (msg.action === "RELOAD") {
@@ -358,8 +384,7 @@
     } else if (msg.action === "MARK") {
       chrome.runtime.sendMessage({
         action: "STORE",
-        data: { [currentURL]: { lastCleared: new Date().toDateString() } },
-        response: { tabId: tabId, action: "RELOAD" }
+        data: { [currentURL]: { lastCleared: new Date().toDateString() } }
       });
     } else {
       console.log("Unknown action.");
@@ -367,6 +392,7 @@
   });
 
   // Check to see if we need to kick off a removal request.
+  console.log("Checking existing removal process.");
   chrome.runtime.sendMessage({
     action: "CHECK_ALREADY_REMOVING"
   });
