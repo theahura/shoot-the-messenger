@@ -210,11 +210,17 @@
     for (let i = 0; i < 20; ++i) {
       await sleep(5000);
       const highlighted = document.getElementsByClassName("__in");
-      console.log(highlighted);
+      console.log("Highlighted: ", highlighted);
+      if (highlighted.length === 0) {
+        // Hit a weird case where the search button wasn't actually pressed.
+        // Return error.
+        console.log("Search text not indexed by facebook. Returning error.");
+        return STATUS.ERROR;
+      }
       const allInQuery = [...highlighted].map(el =>
         searchText.includes(el.innerHTML)
       );
-      console.log(allInQuery);
+      console.log("Query selection: ", allInQuery);
       if (allInQuery.filter(Boolean).length >= expectedMatcherLength) {
         console.log("Got the closest match for search text.");
         return STATUS.CONTINUE;
