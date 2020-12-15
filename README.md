@@ -10,4 +10,4 @@ The extension is currently waiting approval on the Web Store. In the meantime, y
 
 NOTE: while for the most part unsending messages does not result in notifications for the other party, some iPhone users reported getting a lot of notifications as messages were being removed. The content of the message was not present. It's not clear when this happens or why -- some users report getting the notifications, some do not. Use at your own risk.
 
-Specifically, users with Messenger v293 on iPhone have reported getting notifications when messages are removed. 
+Specifically, users with Messenger v291.2+ on iPhone have reported getting notifications when messages are removed. 
