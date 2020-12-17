@@ -1,3 +1,6 @@
+# NOTE: Shoot the Messenger is currently broken.
+Facebook's latest UI change to the desktop messenger removed the 'search in conversation' feature. This feature is the core backbone of Shoot the Messenger -- the extension uses 'search in conversation' to continuously load older and older messages without running into memory issues. Currently looking for a way to get around this problem, but right now it's looking grim. 
+
 ![Shoot the Messenger Icon](/icon.png)
 
 # Shoot the Messenger
