@@ -80,31 +80,61 @@ PREVIOUS_SEARCH_QUERY = null;
       el.click();
     });
 
-    const more_buttons = document.querySelectorAll(MORE_BUTTONS_QUERY);
-    console.log("Clicking more buttons: ", more_buttons);
-    [...more_buttons]
-      .filter(el => {
-        return getSiblings(el.parentNode.parentNode.parentNode).length > 1;
-      })
-      .map(el => {
-        el.click();
-      });
-
-    // Click on all of the 'remove' popups that appear.
-    const remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
-    console.log("Clicking remove buttons: ", remove_buttons);
-    [...remove_buttons].map(el => {
-      el.click();
+    let more_buttons = [
+      ...document.querySelectorAll(MORE_BUTTONS_QUERY)
+    ].filter(el => {
+      return (
+        getSiblings(el.parentNode.parentNode.parentNode).length > 1 &&
+        el.getAttribute("data-clickcount") < 5
+      );
     });
 
-    // Click on all of the 'confirm remove' buttons.
-    const unsend_buttons = document.querySelectorAll(REMOVE_CONFIRMATION_QUERY);
-    console.log("Unsending: ", unsend_buttons);
-    for (let unsend_button of unsend_buttons) {
-      unsend_button.click();
+    const more_button_count = more_buttons.length;
+
+    while (more_buttons.length > 0) {
+      console.log("Clicking more buttons: ", more_buttons);
+      [...more_buttons].map(el => {
+        el.click();
+        const prevClickCount = el.getAttribute("data-clickcount");
+        el.setAttribute(
+          "data-clickcount",
+          prevClickCount ? prevClickCount + 1 : 1
+        );
+      });
       await sleep(2000);
+
+      // Click on all of the 'remove' popups that appear.
+      let remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
+      while (remove_buttons.length > 0) {
+        console.log("Clicking remove buttons: ", remove_buttons);
+        [...remove_buttons].map(el => {
+          el.click();
+        });
+
+        // Click on all of the 'confirm remove' buttons.
+        await sleep(5000);
+        const unsend_buttons = document.querySelectorAll(
+          REMOVE_CONFIRMATION_QUERY
+        );
+        console.log("Unsending: ", unsend_buttons);
+        for (let unsend_button of unsend_buttons) {
+          unsend_button.click();
+        }
+        await sleep(5000);
+        remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
+      }
+      more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
+        el => {
+          return (
+            getSiblings(el.parentNode.parentNode.parentNode).length > 1 &&
+            el.getAttribute("data-clickcount") < 5
+          );
+        }
+      );
     }
 
+    // TODO(theahura): Figure out if the code for rate limiting is still relevant.
+    //
     // for (let remove_button of remove_buttons) {
     //   // Sometimes a remove fails for inexplicable reasons, likely rate limting.
     //   // To handle this, we loop until we confirm the message is deleted.
@@ -183,7 +213,7 @@ PREVIOUS_SEARCH_QUERY = null;
     // And then run the whole thing again after 500ms for loading if we didnt
     // have any removals (to zoom up quickly), or 5s if we did have removals to
     // avoid any rate limiting.
-    if (remove_buttons.length === 0) {
+    if (more_button_count === 0) {
       return { status: STATUS.CONTINUE, data: 500 };
     } else {
       return { status: STATUS.CONTINUE, data: 5000 };
