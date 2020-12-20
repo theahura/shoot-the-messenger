@@ -5,7 +5,8 @@ MORE_BUTTONS_HOLDER_QUERY =
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
-REMOVE_BUTTON_QUERY = '[aria-label="Remove message"]';
+REMOVE_BUTTON_QUERY =
+  '[aria-label="Remove message"], [aria-label="Remove Message"]';
 
 // The button used to close the 'message removed' post confirmation.
 OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
@@ -23,7 +24,7 @@ SCROLLER_QUERY =
 MESSAGES_QUERY = "[aria-label=Messages]";
 
 // The loading animation.
-LOADING_QUERY = '[role="main"] [aria-valuetext="Loading..."]';
+LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
 
 // The div holding the inbox (used for scrolling).
 INBOX_QUERY =
