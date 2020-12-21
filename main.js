@@ -20,11 +20,14 @@ REMOVE_CONFIRMATION_QUERY = '[aria-label="Remove"]';
 // The holder for all of the messages in the chat.
 SCROLLER_QUERY =
   '[role="main"] .buofh1pr.j83agx80.eg9m0zos.ni8dbmo4.cbu4d94t.gok29vw1';
-
 MESSAGES_QUERY = "[aria-label=Messages]";
 
 // The loading animation.
 LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
+
+// The div at the very top of the message chain.
+TOP_OF_CHAIN_QUERY =
+  ".d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.gk29lw5a.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.d9wwppkn.fe6kdd0r.mau55g9w.c8b282yb.hrzyx87i.o3w64lxj.b2s5l15y.hnhda86s.oo9gr5id.oqcyycmt";
 
 // The div holding the inbox (used for scrolling).
 INBOX_QUERY =
@@ -173,8 +176,13 @@ PREVIOUS_SEARCH_QUERY = null;
     // to hit the 'Load More' button or if we need to scroll up.
     const maybeLoaders = document.querySelectorAll(LOAD_MORE_QUERY);
     const scroller_ = document.querySelector(SCROLLER_QUERY);
+    const topOfChain = document.querySelector(TOP_OF_CHAIN_QUERY);
     await sleep(2000);
-    if (maybeLoaders.length > 1) {
+    if (topOfChain.length > 0) {
+      // We hit the top. Bubble this info back up.
+      console.log("Reached top of chain: ", topOfChain);
+      return { status: STATUS.COMPLETE };
+    } else if (maybeLoaders.length > 1) {
       // We should have two load more buttons, unless we've hit the top.
       console.log("Clicking load more.");
       maybeLoaders[0].click();
@@ -205,10 +213,12 @@ PREVIOUS_SEARCH_QUERY = null;
         loader = document.querySelector(LOADING_QUERY);
       }
     } else {
-      // There's no Load More button and there's no more scrolling up, so we
-      // probably sucessfully finished. Bubble this info back up.
-      console.log("Reached top of chain: ", scroller_.scrollTop);
-      return { status: STATUS.COMPLETE };
+      // Something is wrong. We dont have load more OR scrolling, but we havent
+      // hit the top either.
+      console.log(
+        "No scroller or load buttons, but we didnt hit the top. Failing."
+      );
+      return { status: STATUS.ERROR };
     }
 
     // And then run the whole thing again after 500ms for loading if we didnt
