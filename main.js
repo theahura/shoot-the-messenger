@@ -87,51 +87,42 @@ PREVIOUS_SEARCH_QUERY = null;
     let more_buttons = [
       ...document.querySelectorAll(MORE_BUTTONS_QUERY)
     ].filter(el => {
-      return el.getAttribute("data-clickcount") < 5;
+      return el.getAttribute("data-clickcount") < 3;
     });
 
     const more_button_count = more_buttons.length;
+    console.log("Clicking more buttons: ", more_buttons);
 
     while (more_buttons.length > 0) {
-      console.log("Clicking more buttons: ", more_buttons);
-      [...more_buttons].map(el => {
-        el.click();
-        const prevClickCount = el.getAttribute("data-clickcount");
-        el.setAttribute(
-          "data-clickcount",
-          prevClickCount ? prevClickCount + 1 : 1
-        );
-      });
-      await sleep(2000);
+      for (let more_button of more_buttons) {
+        try {
+          more_button.click();
+          const prevClickCount = more_button.getAttribute("data-clickcount");
+          more_button.setAttribute(
+            "data-clickcount",
+            prevClickCount ? prevClickCount + 1 : 1
+          );
+          await sleep(500);
 
-      // Click on all of the 'remove' popups that appear.
-      let remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
-      while (remove_buttons.length > 0) {
-        console.log("Clicking remove buttons: ", remove_buttons);
-        [...remove_buttons].map(el => {
-          el.click();
-        });
+          // Click on all of the 'remove' popups that appear.
+          let remove_button = document.querySelector(REMOVE_BUTTON_QUERY);
+          console.log("Clicking remove buttons: ", remove_button);
+          remove_button.click();
+          await sleep(500);
 
-        // Click on all of the 'confirm remove' buttons.
-        await sleep(5000);
-        let unsend_buttons = document.querySelectorAll(
-          REMOVE_CONFIRMATION_QUERY
-        );
-
-        while (unsend_buttons.length > 0) {
-          console.log("Unsending: ", unsend_buttons);
-          for (let unsend_button of unsend_buttons) {
-            unsend_button.click();
-          }
-          await sleep(5000);
-          unsend_buttons = document.querySelectorAll(REMOVE_CONFIRMATION_QUERY);
+          // Click on all of the 'confirm remove' buttons.
+          let unsend_button = document.querySelector(REMOVE_CONFIRMATION_QUERY);
+          console.log("Unsending: ", unsend_button);
+          unsend_button.click();
+          await sleep(500);
+        } catch (err) {
+          console.log(err);
         }
-
-        remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
       }
+
       more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
         el => {
-          return el.getAttribute("data-clickcount") < 5;
+          return el.getAttribute("data-clickcount") < 3;
         }
       );
     }
