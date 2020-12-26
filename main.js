@@ -87,7 +87,7 @@ PREVIOUS_SEARCH_QUERY = null;
     let more_buttons = [
       ...document.querySelectorAll(MORE_BUTTONS_QUERY)
     ].filter(el => {
-      return el.getAttribute("data-clickcount") < 3;
+      return el.getAttribute("data-clickcount") < 5;
     });
 
     const more_button_count = more_buttons.length;
@@ -122,7 +122,7 @@ PREVIOUS_SEARCH_QUERY = null;
 
       more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
         el => {
-          return el.getAttribute("data-clickcount") < 3;
+          return el.getAttribute("data-clickcount") < 5;
         }
       );
     }
