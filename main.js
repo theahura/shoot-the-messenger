@@ -1,7 +1,7 @@
 // The sideways ellipses used to open the 'remove' menu. To the left of each
 // message, generally visible on hover.
-MORE_BUTTONS_HOLDER_QUERY =
-  '[data-testid="outgoing_group"] [aria-label="Message actions"]';
+MORE_BUTTONS_HOLDER_QUERY = '[aria-label="Message actions"]';
+// '[data-testid="outgoing_group"] [aria-label="Message actions"]';
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
@@ -87,10 +87,7 @@ PREVIOUS_SEARCH_QUERY = null;
     let more_buttons = [
       ...document.querySelectorAll(MORE_BUTTONS_QUERY)
     ].filter(el => {
-      return (
-        getSiblings(el.parentNode.parentNode.parentNode).length > 1 &&
-        el.getAttribute("data-clickcount") < 5
-      );
+      return el.getAttribute("data-clickcount") < 5;
     });
 
     const more_button_count = more_buttons.length;
@@ -117,54 +114,27 @@ PREVIOUS_SEARCH_QUERY = null;
 
         // Click on all of the 'confirm remove' buttons.
         await sleep(5000);
-        const unsend_buttons = document.querySelectorAll(
+        let unsend_buttons = document.querySelectorAll(
           REMOVE_CONFIRMATION_QUERY
         );
-        console.log("Unsending: ", unsend_buttons);
-        for (let unsend_button of unsend_buttons) {
-          unsend_button.click();
+
+        while (unsend_buttons.length > 0) {
+          console.log("Unsending: ", unsend_buttons);
+          for (let unsend_button of unsend_buttons) {
+            unsend_button.click();
+          }
+          await sleep(5000);
+          unsend_buttons = document.querySelectorAll(REMOVE_CONFIRMATION_QUERY);
         }
-        await sleep(5000);
+
         remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
       }
       more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
         el => {
-          return (
-            getSiblings(el.parentNode.parentNode.parentNode).length > 1 &&
-            el.getAttribute("data-clickcount") < 5
-          );
+          return el.getAttribute("data-clickcount") < 5;
         }
       );
     }
-
-    // TODO(theahura): Figure out if the code for rate limiting is still relevant.
-    //
-    // for (let remove_button of remove_buttons) {
-    //   // Sometimes a remove fails for inexplicable reasons, likely rate limting.
-    //   // To handle this, we loop until we confirm the message is deleted.
-    //   while (true) {
-    //     remove_button.click();
-    //     await sleep(2000);
-    //     // Each one of those remove buttons will pull up a modal for confirmation.
-    //     // Click the modal too.
-    //     console.log("Unsending: ", unsend_button);
-    //     unsend_button.click();
-    //     await sleep(2000);
-
-    //     // There might be a post confirmation message letting you know about the
-    //     // removal. Get rid of it.
-    //     const maybe_ok_button = document.querySelector(OKAY_BUTTON_QUERY);
-    //     if (maybe_ok_button) maybe_ok_button.click();
-    //     await sleep(2000);
-
-    //     let couldntremove = document.querySelector(COULDNT_REMOVE_QUERY);
-    //     if (couldntremove) {
-    //       await 3000000;
-    //     } else {
-    //       break;
-    //     }
-    //   }
-    // }
 
     // If this is the last run before the runner cycle finishes, dont keep
     // scrolling up.
@@ -178,7 +148,7 @@ PREVIOUS_SEARCH_QUERY = null;
     const scroller_ = document.querySelector(SCROLLER_QUERY);
     const topOfChain = document.querySelector(TOP_OF_CHAIN_QUERY);
     await sleep(2000);
-    if (topOfChain.length > 0) {
+    if (topOfChain) {
       // We hit the top. Bubble this info back up.
       console.log("Reached top of chain: ", topOfChain);
       return { status: STATUS.COMPLETE };
@@ -195,14 +165,6 @@ PREVIOUS_SEARCH_QUERY = null;
       } catch (err) {
         console.log(err);
       }
-
-      // Remove all of the previously covered messages from the DOM to try and
-      // save memory.
-      // let messages = document.querySelector(MESSAGES_QUERY);
-      // console.log("Removing elements from: ", messages);
-      // while (messages.childNodes.length > 150) {
-      //   messages.removeChild(messages.lastChild);
-      // }
 
       // Don't continue until the loading animation is gone.
       await sleep(2000);
@@ -246,186 +208,14 @@ PREVIOUS_SEARCH_QUERY = null;
     return STATUS.CONTINUE;
   }
 
-  async function enterSearchbar(searchText) {
-    // Get the search bar and set the text to search for. Make sure things have
-    // actually loaded.
-    console.log("Set up search bar. Starting removal process.");
-    let searchInConvo = null;
-    for (let i = 0; !searchInConvo || i < 10; ++i) {
-      searchInConvo = [
-        ...document.querySelectorAll(SEARCH_IN_CONVO_QUERY)
-      ].filter(el => el.innerHTML === "Search in Conversation")[0];
-
-      if (!searchInConvo) await sleep(5000);
-    }
-
-    if (!searchInConvo) {
-      console.log(
-        "Could not find Search In Conversation button after 50 seconds."
-      );
-      return STATUS.ERROR;
-    }
-
-    console.log("Got searchInConvo: ", searchInConvo);
-
-    let searchBar = document.querySelector(SEARCH_BAR_QUERY);
-    let previousSearch = document.querySelector(PREVIOUS_SEARCH_QUERY);
-
-    if (searchBar || previousSearch) {
-      // Need to reboot the search bar.
-      console.log(
-        "Resetting search bar. Previous searchbar found: ",
-        searchBar,
-        previousSearch
-      );
-      searchInConvo.click();
-      await sleep(2000);
-      searchInConvo.click();
-      await sleep(2000);
-    } else {
-      // Need to open the search bar.
-      console.log("Opening search bar. No searchbar found: ", searchBar);
-      searchInConvo.click();
-      await sleep(2000);
-    }
-
-    // Either way, need to re-query the search bar because we recreated it.
-    searchBar = document.querySelector(SEARCH_BAR_QUERY);
-    searchBar.focus();
-    searchBar.value = searchText;
-
-    // Trigger the search.
-    console.log("Searching for: ", searchText);
-    const ke_down = new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      keyCode: 13
-    });
-    searchBar.dispatchEvent(ke_down);
-
-    const ke_up = new KeyboardEvent("keyup", {
-      bubbles: true,
-      cancelable: true,
-      keyCode: 13
-    });
-    document.body.dispatchEvent(ke_up);
-
-    // Look for the message that best matches searchText.
-    // As a heuristic, we stop at the first message where every highlighted
-    // word also appears in the searchText. This has obvious failure modes,
-    // but is also probably sufficient for natural language.
-    const nextButton = document.querySelectorAll(NEXT_SEARCH_QUERY)[0];
-    const expectedMatcherLength = searchText
-      .split(/\s+/)
-      .filter(word => word.length > 3).length;
-    console.log("Looking for message with N matches: ", expectedMatcherLength);
-    for (let i = 0; i < 20; ++i) {
-      await sleep(5000);
-      const highlighted = document.querySelectorAll(HIGHLIGHTED_QUERY);
-      console.log("Highlighted: ", highlighted);
-      if (highlighted.length === 0) {
-        // Hit a weird case where the search button wasn't actually pressed.
-        // Return error.
-        console.log("Search text not indexed by facebook. Returning error.");
-        return STATUS.ERROR;
-      }
-      const allInQuery = [...highlighted].map(el =>
-        searchText.includes(el.innerHTML)
-      );
-      console.log("Query selection: ", allInQuery);
-      if (allInQuery.filter(Boolean).length >= expectedMatcherLength) {
-        console.log("Got the closest match for search text.");
-        return STATUS.CONTINUE;
-      }
-      console.log("Did not find match for search text, continuing");
-      nextButton.click();
-    }
-    console.log("Could not find any matches for search: ", searchText);
-    return STATUS.ERROR;
-  }
-
-  async function getNextSearchText(searchText) {
-    // Get all the candidate search messages. Cut each one down to a 15 word
-    // string. Remove any that are the same as the current searchText or have
-    // fewer than 5 words with length greater than 3.
-    const candidates = [...document.querySelectorAll(SEARCH_CANDIDATE_QUERY)];
-    console.log("Candidates: ", candidates);
-    const processedCandidates = candidates
-      .map(el =>
-        el.innerText
-          .split(/\s+/)
-          .slice(0, 15)
-          .join(" ")
-      )
-      .filter(text => {
-        if (
-          text !== searchText &&
-          text.split(/\s+/).filter(word => word.length > 3).length > 5
-        ) {
-          return true;
-        }
-        return false;
-      });
-    console.log("Processed candidates: ", processedCandidates);
-
-    // Next, reset the search bar to bring us back down to the beginning, and
-    // then try and find the next best matching search point.
-    for (let candidate of processedCandidates) {
-      console.log("Testing search candidate: ", candidate);
-      if ((await enterSearchbar(candidate)) === STATUS.CONTINUE) {
-        console.log("Found match for candidate: ", candidate);
-        return { status: STATUS.CONTINUE, data: candidate };
-      }
-    }
-
-    console.log(
-      "No candidate within list of processedCandidates found.",
-      processedCandidates
-    );
-    return STATUS.ERROR;
-  }
-
-  async function longChain(count, runnerCount, prevSearchText) {
-    let searchText = "";
-
-    if (prevSearchText) {
-      console.log("Got search text: ", prevSearchText);
-      const prevSearchStatus = await enterSearchbar(prevSearchText);
-      if (prevSearchStatus === STATUS.CONTINUE) {
-        console.log("Successfully reloaded old state. Starting runner.");
-        searchText = prevSearchText;
-      }
-    }
-
+  async function longChain(count, runnerCount) {
     for (let i = 0; i < count || !count; ++i) {
       console.log("On run: ", i);
       const status = await runner(runnerCount);
       console.log("Runner status: ", status);
       if (status === STATUS.COMPLETE) return { status: status };
-
-      // TODO(theahura): FB Dec 2021 update kills the search in conversation
-      // feature. These queries are outdated.
-      //
-      // const maybeSearchText = await getNextSearchText(searchText);
-      // if (maybeSearchText.status === STATUS.CONTINUE) {
-      //   console.log("Next search is: ", maybeSearchText.data);
-      //   searchText = maybeSearchText.data;
-      // } else {
-      //   console.log(
-      //     "Encountered error. All messages may not have been deleted."
-      //   );
-
-      //   // Check one last time to make sure this was in fact an error and not a
-      //   // reason to clear.
-      //   console.log("Testing error status.");
-      //   const maybeStatus = await runner(actualRunnerCount);
-      //   if (maybeStatus === STATUS.COMPLETE) return { status: maybeStatus };
-      //   console.log("Confirmed error.");
-
-      //   return { status: STATUS.ERROR };
-      // }
     }
-    return { status: STATUS.CONTINUE, data: searchText };
+    return { status: STATUS.CONTINUE };
   }
 
   // Scroller functions --------------------------------------------------------
@@ -445,42 +235,22 @@ PREVIOUS_SEARCH_QUERY = null;
   const currentURL =
     location.protocol + "//" + location.host + location.pathname;
 
-  async function removeHandler(msg, tabId) {
-    const prevSearchText = msg.prevSearchText
-      ? msg.prevSearchText["nextSearchText"]
-      : null;
-
-    // TODO(theahura): FB Dec 2021 update kills the search in conversation
-    // feature. These queries are outdated.
-    const maybeSearchText = await longChain(0, 0, prevSearchText);
-    if (maybeSearchText.status === STATUS.COMPLETE) {
+  async function removeHandler(tabId) {
+    const status = await longChain(10, 10);
+    if (status.status === STATUS.COMPLETE) {
       console.log(
         "Possibly successfully removed all messages. Running one more confirmation attempt."
       );
-      const confirmSuccess = await longChain(5, 5, prevSearchText);
-      if (confirmSuccess.status === STATUS.CONTINUE) {
-        console.log("Didnt actually complete. Continuing...");
-        msg["prevSearchText"] = confirmSuccess.data;
-        removeHandler(msg, tabId);
-      } else if (confirmSuccess.status === STATUS.ERROR) {
-        console.log("Failed to complete longChain removal.");
-      } else {
-        console.log("Successful confirmation! All cleared!");
-        chrome.runtime.sendMessage({
-          action: "TEMP_DELETE",
-          data: currentURL,
-          response: { tabId: tabId, action: "MARK" }
-        });
-      }
-    } else if (maybeSearchText.status === STATUS.CONTINUE) {
+      chrome.runtime.sendMessage({
+        action: "STORE",
+        data: { [currentURL]: { confirmSuccess: true } },
+        response: { tabId: tabId, action: "RELOAD" }
+      });
+    } else if (status.status === STATUS.CONTINUE) {
       console.log("Completed runner iteration but did not finish removal.");
       chrome.runtime.sendMessage({
         action: "STORE",
-        data: { [currentURL]: { nextSearchText: maybeSearchText.data } }
-      });
-      chrome.runtime.sendMessage({
-        action: "TEMP_STORE",
-        data: { [tabId]: { nextSearchText: maybeSearchText.data } },
+        data: { [currentURL]: { isRemoving: true } },
         response: { tabId: tabId, action: "RELOAD" }
       });
     } else {
@@ -492,22 +262,31 @@ PREVIOUS_SEARCH_QUERY = null;
     console.log("Got action: ", msg.action);
     const tabId = msg.tabId;
     if (msg.action === "REMOVE") {
-      removeHandler(msg, tabId);
+      removeHandler(tabId);
     } else if (msg.action === "CONFIRM_REMOVE") {
-      const keep_removing = confirm(
-        "Continue removing messages from: " +
-          msg.prevSearchText["nextSearchText"]
-      );
-      if (keep_removing) removeHandler(msg, tabId);
+      const keep_removing = confirm("Continue removing messages?");
+      if (keep_removing) removeHandler(tabId);
+    } else if (msg.action === "CONFIRM_SUCCESS") {
+      const maybeSuccess = runner(10);
+      if (maybeSuccess.status === STATUS.CONTINUE) {
+        chrome.runtime.sendMessage({
+          action: "STORE",
+          data: { [currentURL]: { isRemoving: true } }
+        });
+        removeHandler(tabId);
+      } else if (maybeSuccess.status === STATUS.COMPLETE) {
+        console.log("Successful confirmation! All cleared!");
+        chrome.runtime.sendMessage({
+          action: "STORE",
+          data: { [currentURL]: { lastCleared: new Date().toDateString() } }
+        });
+      } else {
+        console.log("Got error during confirmation attempt. Failing.");
+      }
     } else if (msg.action === "SCROLL") {
       scrollToBottom(100);
     } else if (msg.action === "RELOAD") {
       window.location = window.location.pathname;
-    } else if (msg.action === "MARK") {
-      chrome.runtime.sendMessage({
-        action: "STORE",
-        data: { [currentURL]: { lastCleared: new Date().toDateString() } }
-      });
     } else {
       console.log("Unknown action.");
     }
