@@ -1,7 +1,12 @@
 document.getElementById("RemoveMessages").addEventListener("click", () => {
-  chrome.extension.sendMessage({
-    action: "REMOVE"
-  });
+  const doRemove = confirm(
+    "Removal will nuke your messages and will prevent you from seeing the messages of other people in this chat. We HIGHLY recommend backing up your messages first. Continue?"
+  );
+  if (doRemove) {
+    chrome.extension.sendMessage({
+      action: "REMOVE"
+    });
+  }
 });
 
 document.getElementById("ScrollToBottom").addEventListener("click", () => {
