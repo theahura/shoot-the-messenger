@@ -257,7 +257,7 @@ PREVIOUS_SEARCH_QUERY = null;
     location.protocol + "//" + location.host + location.pathname;
 
   async function removeHandler(tabId) {
-    const status = await longChain(10, 10);
+    const status = await longChain(5, 5);
     if (status.status === STATUS.COMPLETE) {
       console.log(
         "Possibly successfully removed all messages. Running one more confirmation attempt."
