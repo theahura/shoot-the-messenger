@@ -33,6 +33,9 @@ TOP_OF_CHAIN_QUERY =
 INBOX_QUERY =
   ".q5bimw55.rpm2j7zs.k7i0oixp.gvuykj2m.j83agx80.cbu4d94t.ni8dbmo4.eg9m0zos.l9j0dhe7.du4w35lb.ofs802cu.pohlnb88.dkue75c7.mb9wzai9.d8ncny3e.buofh1pr.g5gj957u.tgvbjcpo.l56l04vs.r57mb794.kh7kg01d.c3g1iek1.k4xni2cv";
 
+// Sticker query.
+STICKER_QUERY = "[aria-label$=sticker]";
+
 // The button used to keep scrolling up after a search in the messenger chain.
 // TODO(theahura): FB Dec 2021 update kills the search in conversation
 // feature. These queries are outdated.
@@ -73,7 +76,24 @@ PREVIOUS_SEARCH_QUERY = null;
   }
 
   // Removal functions ---------------------------------------------------------
-  async function unsendAllVisibleMessages(lastRun) {
+  function removeStickerRowsFromDOM() {
+    const stickers = document.querySelectorAll(STICKER_QUERY);
+    console.log("Removing stickers from dom: ", stickers);
+    for (let sticker of stickers) {
+      let el = sticker;
+      try {
+        while (el.getAttribute("role") !== "row") el = el.parentElement;
+        el.remove();
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  }
+
+  async function unsendAllVisibleMessages(lastRun, count) {
+    // Start by removing messages that cant be unsent (due to fb being weird).
+    removeStickerRowsFromDOM();
+
     // Click on all ... buttons that let you select 'more' for all messages you
     // sent.
     const more_buttons_holders = document.querySelectorAll(
@@ -94,32 +114,42 @@ PREVIOUS_SEARCH_QUERY = null;
     console.log("Clicking more buttons: ", more_buttons);
 
     while (more_buttons.length > 0) {
-      for (let more_button of more_buttons) {
-        try {
-          more_button.click();
-          const prevClickCount = more_button.getAttribute("data-clickcount");
-          more_button.setAttribute(
-            "data-clickcount",
-            prevClickCount ? prevClickCount + 1 : 1
-          );
-          await sleep(500);
+      console.log("Clicking more buttons: ", more_buttons);
+      [...more_buttons].map(el => {
+        el.click();
+        const prevClickCount = el.getAttribute("data-clickcount");
+        el.setAttribute(
+          "data-clickcount",
+          prevClickCount ? prevClickCount + 1 : 1
+        );
+      });
+      await sleep(2000);
 
-          // Click on all of the 'remove' popups that appear.
-          let remove_button = document.querySelector(REMOVE_BUTTON_QUERY);
-          console.log("Clicking remove buttons: ", remove_button);
-          remove_button.click();
-          await sleep(500);
+      // Click on all of the 'remove' popups that appear.
+      let remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
+      while (remove_buttons.length > 0) {
+        console.log("Clicking remove buttons: ", remove_buttons);
+        [...remove_buttons].map(el => {
+          el.click();
+        });
 
-          // Click on all of the 'confirm remove' buttons.
-          let unsend_button = document.querySelector(REMOVE_CONFIRMATION_QUERY);
-          console.log("Unsending: ", unsend_button);
-          unsend_button.click();
-          await sleep(500);
-        } catch (err) {
-          console.log(err);
+        // Click on all of the 'confirm remove' buttons.
+        await sleep(5000);
+        let unsend_buttons = document.querySelectorAll(
+          REMOVE_CONFIRMATION_QUERY
+        );
+
+        while (unsend_buttons.length > 0) {
+          console.log("Unsending: ", unsend_buttons);
+          for (let unsend_button of unsend_buttons) {
+            unsend_button.click();
+          }
+          await sleep(5000);
+          unsend_buttons = document.querySelectorAll(REMOVE_CONFIRMATION_QUERY);
         }
-      }
 
+        remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
+      }
       more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
         el => {
           return el.getAttribute("data-clickcount") < 5;
@@ -188,7 +218,7 @@ PREVIOUS_SEARCH_QUERY = null;
     console.log("Starting runner removal for N iterations: ", count);
     for (let i = 0; i < count || !count; ++i) {
       console.log("Running count:", i);
-      const sleepTime = await unsendAllVisibleMessages(i == count - 1);
+      const sleepTime = await unsendAllVisibleMessages(i == count - 1, 100);
       if (sleepTime.status === STATUS.CONTINUE) {
         await sleep(sleepTime.data);
       } else if (sleepTime.status === STATUS.COMPLETE) {
