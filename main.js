@@ -1,7 +1,7 @@
 // The sideways ellipses used to open the 'remove' menu. To the left of each
 // message, generally visible on hover.
-MORE_BUTTONS_HOLDER_QUERY = '[aria-label="Message actions"]';
-// '[data-testid="outgoing_group"] [aria-label="Message actions"]';
+MORE_BUTTONS_HOLDER_QUERY =
+  '[data-testid="outgoing_group"] [aria-label="Message actions"]';
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
@@ -40,12 +40,30 @@ STICKER_QUERY = "[aria-label$=sticker]";
 // TODO(theahura): FB Dec 2021 update kills the search in conversation
 // feature. These queries are outdated.
 LOAD_MORE_QUERY = null;
-SEARCH_BAR_QUERY = null;
-SEARCH_CANDIDATE_QUERY = null;
-HIGHLIGHTED_QUERY = null;
-SEARCH_IN_CONVO_QUERY = null;
-NEXT_SEARCH_QUERY = null;
-PREVIOUS_SEARCH_QUERY = null;
+
+// Div holding the search in conversation button. Requires additional text
+// filtering for "Search in Conversation".
+SEARCH_IN_CONVO_QUERY =
+  ".a8c37x1j.ni8dbmo4.stjgntxs.l9j0dhe7.ltmttdrg.g0qnabr5";
+
+// The currently highlighted search terms.
+HIGHLIGHTED_QUERY =
+  "[data-testid='messenger_incoming_text_row'] [role='gridcell']";
+
+// Queries that were sent by other people, that can be used as possible search
+// terms.
+SEARCH_CANDIDATE_QUERY = '[data-testid="messenger_incoming_text_row"]';
+
+// The actual search bar.
+SEARCH_BAR_QUERY = '[placeholder="Search"]';
+
+// Buttons used for searching up and down searches.
+NEXT_SEARCH_QUERY = '[aria-label="Next"]';
+PREVIOUS_SEARCH_QUERY = '[aria-label="Previous"]';
+
+// The button to open the conversation information tab that contains the search
+// in convo info.
+INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
 
 (function() {
   STATUS = {
