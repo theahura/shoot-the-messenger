@@ -288,7 +288,8 @@ PREVIOUS_SEARCH_QUERY = null;
       const keep_removing = confirm("Continue removing messages?");
       if (keep_removing) removeHandler(tabId);
     } else if (msg.action === "CONFIRM_SUCCESS") {
-      const maybeSuccess = runner(10);
+      await sleep(10000);
+      const maybeSuccess = runner(3);
       if (maybeSuccess.status === STATUS.CONTINUE) {
         chrome.runtime.sendMessage({
           action: "STORE",
@@ -303,6 +304,11 @@ PREVIOUS_SEARCH_QUERY = null;
         });
       } else {
         console.log("Got error during confirmation attempt. Failing.");
+        chrome.runtime.sendMessage({
+          action: "STORE",
+          data: { [currentURL]: { isRemoving: true } },
+          response: { tabId: tabId, action: "RELOAD" }
+        });
       }
     } else if (msg.action === "SCROLL") {
       scrollToBottom(100);
