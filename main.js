@@ -247,6 +247,151 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
     return STATUS.CONTINUE;
   }
 
+  async function enterSearchbar(searchText) {
+    // Get the search bar and set the text to search for. Make sure things have
+    // actually loaded.
+    console.log("Set up search bar. Starting removal process.");
+    let searchInConvo = null;
+    for (let i = 0; !searchInConvo || i < 10; ++i) {
+      searchInConvo = [...document.getElementsByClassName("_3szq")].filter(
+        el => el.innerHTML === "Search in Conversation"
+      )[0];
+
+      if (!searchInConvo) await sleep(5000);
+    }
+
+    if (!searchInConvo) {
+      console.log(
+        "Could not find Search In Conversation button after 50 seconds."
+      );
+      return STATUS.ERROR;
+    }
+
+    console.log("Got searchInConvo: ", searchInConvo);
+
+    let searchBar = document.querySelector(
+      '*[placeholder="Search in Conversation"]'
+    );
+    let previousSearch = document.querySelector("._33p7[role=presentation]");
+
+    if (searchBar || previousSearch) {
+      // Need to reboot the search bar.
+      console.log(
+        "Resetting search bar. Previous searchbar found: ",
+        searchBar,
+        previousSearch
+      );
+      searchInConvo.click();
+      await sleep(2000);
+      searchInConvo.click();
+      await sleep(2000);
+    } else {
+      // Need to open the search bar.
+      console.log("Opening search bar. No searchbar found: ", searchBar);
+      searchInConvo.click();
+      await sleep(2000);
+    }
+
+    // Either way, need to re-query the search bar because we recreated it.
+    searchBar = document.querySelector(
+      '*[placeholder="Search in Conversation"]'
+    );
+    searchBar.focus();
+    searchBar.value = searchText;
+
+    // Trigger the search.
+    console.log("Searching for: ", searchText);
+    const ke_down = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      keyCode: 13
+    });
+    searchBar.dispatchEvent(ke_down);
+
+    const ke_up = new KeyboardEvent("keyup", {
+      bubbles: true,
+      cancelable: true,
+      keyCode: 13
+    });
+    document.body.dispatchEvent(ke_up);
+
+    // Look for the message that best matches searchText.
+    // As a heuristic, we stop at the first message where every highlighted
+    // word also appears in the searchText. This has obvious failure modes,
+    // but is also probably sufficient for natural language.
+    const nextButton = document.getElementsByClassName(
+      "_3quh _30yy _2t_ _-19 _b-u"
+    )[0];
+    const expectedMatcherLength = searchText
+      .split(/\s+/)
+      .filter(word => word.length > 3).length;
+    console.log("Looking for message with N matches: ", expectedMatcherLength);
+    for (let i = 0; i < 20; ++i) {
+      await sleep(5000);
+      const highlighted = document.getElementsByClassName("__in");
+      console.log("Highlighted: ", highlighted);
+      if (highlighted.length === 0) {
+        // Hit a weird case where the search button wasn't actually pressed.
+        // Return error.
+        console.log("Search text not indexed by facebook. Returning error.");
+        return STATUS.ERROR;
+      }
+      const allInQuery = [...highlighted].map(el =>
+        searchText.includes(el.innerHTML)
+      );
+      console.log("Query selection: ", allInQuery);
+      if (allInQuery.filter(Boolean).length >= expectedMatcherLength) {
+        console.log("Got the closest match for search text.");
+        return STATUS.CONTINUE;
+      }
+      console.log("Did not find match for search text, continuing");
+      nextButton.click();
+    }
+    console.log("Could not find any matches for search: ", searchText);
+    return STATUS.ERROR;
+  }
+
+  async function getNextSearchText(searchText) {
+    // Get all the candidate search messages. Cut each one down to a 15 word
+    // string. Remove any that are the same as the current searchText or have
+    // fewer than 5 words with length greater than 3.
+    const candidates = [...document.getElementsByClassName("_3oh- _58nk")];
+    console.log("Candidates: ", candidates);
+    const processedCandidates = candidates
+      .map(el =>
+        el.innerText
+          .split(/\s+/)
+          .slice(0, 15)
+          .join(" ")
+      )
+      .filter(text => {
+        if (
+          text !== searchText &&
+          text.split(/\s+/).filter(word => word.length > 3).length > 5
+        ) {
+          return true;
+        }
+        return false;
+      });
+    console.log("Processed candidates: ", processedCandidates);
+
+    // Next, reset the search bar to bring us back down to the beginning, and
+    // then try and find the next best matching search point.
+    for (let candidate of processedCandidates) {
+      console.log("Testing search candidate: ", candidate);
+      if ((await enterSearchbar(candidate)) === STATUS.CONTINUE) {
+        console.log("Found match for candidate: ", candidate);
+        return { status: STATUS.CONTINUE, data: candidate };
+      }
+    }
+
+    console.log(
+      "No candidate within list of processedCandidates found.",
+      processedCandidates
+    );
+    return STATUS.ERROR;
+  }
+
   async function longChain(count, runnerCount) {
     for (let i = 0; i < count || !count; ++i) {
       console.log("On run: ", i);
