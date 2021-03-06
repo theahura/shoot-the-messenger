@@ -37,9 +37,12 @@ INBOX_QUERY =
 STICKER_QUERY = "[aria-label$=sticker]";
 
 // The button used to keep scrolling up after a search in the messenger chain.
-// TODO(theahura): FB Dec 2021 update kills the search in conversation
-// feature. These queries are outdated.
-LOAD_MORE_QUERY = null;
+
+// The info button.
+INFO_QUERY = "[aria-label='Conversation Information']";
+
+// The customize chat button. Requires additional text filtering for "Customize Chat".
+CUSTOMIZE_CHAT_QUERY = ".qzhwtbm6.knvmm38d";
 
 // Div holding the search in conversation button. Requires additional text
 // filtering for "Search in Conversation".
@@ -61,20 +64,16 @@ SEARCH_BAR_QUERY = '[placeholder="Search"]';
 NEXT_SEARCH_QUERY = '[aria-label="Next"]';
 PREVIOUS_SEARCH_QUERY = '[aria-label="Previous"]';
 
-// The button to open the conversation information tab that contains the search
-// in convo info.
-INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
-
-(function() {
+(function () {
   STATUS = {
     CONTINUE: "continue",
     ERROR: "error",
-    COMPLETE: "complete"
+    COMPLETE: "complete",
   };
 
   // Helper functions ----------------------------------------------------------
   function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   function getSiblings(el) {
@@ -118,13 +117,13 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
       MORE_BUTTONS_HOLDER_QUERY
     );
     console.log("Found hidden menu holders: ", more_buttons_holders);
-    [...more_buttons_holders].map(el => {
+    [...more_buttons_holders].map((el) => {
       el.click();
     });
 
     let more_buttons = [
-      ...document.querySelectorAll(MORE_BUTTONS_QUERY)
-    ].filter(el => {
+      ...document.querySelectorAll(MORE_BUTTONS_QUERY),
+    ].filter((el) => {
       return el.getAttribute("data-clickcount") < 5;
     });
 
@@ -133,7 +132,7 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
 
     while (more_buttons.length > 0) {
       console.log("Clicking more buttons: ", more_buttons);
-      [...more_buttons].map(el => {
+      [...more_buttons].map((el) => {
         el.click();
         const prevClickCount = el.getAttribute("data-clickcount");
         el.setAttribute(
@@ -147,7 +146,7 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
       let remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
       while (remove_buttons.length > 0) {
         console.log("Clicking remove buttons: ", remove_buttons);
-        [...remove_buttons].map(el => {
+        [...remove_buttons].map((el) => {
           el.click();
         });
 
@@ -169,7 +168,7 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
         remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
       }
       more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
-        el => {
+        (el) => {
           return el.getAttribute("data-clickcount") < 5;
         }
       );
@@ -183,7 +182,6 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
 
     // Cleaned out all the couldnt remove buttons. Now, check to see if we need
     // to hit the 'Load More' button or if we need to scroll up.
-    const maybeLoaders = document.querySelectorAll(LOAD_MORE_QUERY);
     const scroller_ = document.querySelector(SCROLLER_QUERY);
     const topOfChain = document.querySelector(TOP_OF_CHAIN_QUERY);
     await sleep(2000);
@@ -191,11 +189,6 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
       // We hit the top. Bubble this info back up.
       console.log("Reached top of chain: ", topOfChain);
       return { status: STATUS.COMPLETE };
-    } else if (maybeLoaders.length > 1) {
-      // We should have two load more buttons, unless we've hit the top.
-      console.log("Clicking load more.");
-      maybeLoaders[0].click();
-      await sleep(2000);
     } else if (scroller_ && scroller_.scrollTop !== 0) {
       // If we don't have any load more buttons, just try scrolling up.
       console.log("Trying to scroll up.");
@@ -247,55 +240,54 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
     return STATUS.CONTINUE;
   }
 
+  async function ensureSearchBarIsOpen() {
+    // Set up some helpers...
+    const getCustomizeChat = () => {
+      return [...document.querySelectorAll(CUSTOMIZE_CHAT_QUERY)].filter(
+        (el) => el.innerText === "Customize Chat"
+      );
+    };
+
+    const getSearchInConvo = () => {
+      return [...document.querySelectorAll(SEARCH_IN_CONVO_QUERY)].filter(
+        (el) => el.innerText === "Search in Conversation"
+      );
+    };
+
+    const getSearchBar = () => {
+      return [...document.querySelectorAll(SEARCH_BAR_QUERY)];
+    };
+
+    // First check to see if the info button is clicked. If it isn't, click it.
+    if (getCustomizeChat().length === 0) {
+      document.querySelectorAll(INFO_QUERY)[0].click();
+      await sleep(2000);
+    }
+
+    // Then check to make sure the customize chat button is clicked.
+    if (getSearchInConvo().length === 0) {
+      getCustomizeChat()[0].click();
+      await sleep(2000);
+    }
+
+    // Then enable the search bar.
+    if (getSearchBar().length === 0) {
+      getSearchInConvo()[0].click();
+      await sleep(2000);
+    }
+
+    const searchBar = getSearchBar()[0];
+    console.log("Got search bar: ", searchBar);
+    return searchBar;
+  }
+
   async function enterSearchbar(searchText) {
     // Get the search bar and set the text to search for. Make sure things have
     // actually loaded.
     console.log("Set up search bar. Starting removal process.");
-    let searchInConvo = null;
-    for (let i = 0; !searchInConvo || i < 10; ++i) {
-      searchInConvo = [...document.getElementsByClassName("_3szq")].filter(
-        el => el.innerHTML === "Search in Conversation"
-      )[0];
-
-      if (!searchInConvo) await sleep(5000);
-    }
-
-    if (!searchInConvo) {
-      console.log(
-        "Could not find Search In Conversation button after 50 seconds."
-      );
-      return STATUS.ERROR;
-    }
-
-    console.log("Got searchInConvo: ", searchInConvo);
-
-    let searchBar = document.querySelector(
-      '*[placeholder="Search in Conversation"]'
-    );
-    let previousSearch = document.querySelector("._33p7[role=presentation]");
-
-    if (searchBar || previousSearch) {
-      // Need to reboot the search bar.
-      console.log(
-        "Resetting search bar. Previous searchbar found: ",
-        searchBar,
-        previousSearch
-      );
-      searchInConvo.click();
-      await sleep(2000);
-      searchInConvo.click();
-      await sleep(2000);
-    } else {
-      // Need to open the search bar.
-      console.log("Opening search bar. No searchbar found: ", searchBar);
-      searchInConvo.click();
-      await sleep(2000);
-    }
+    const searchBar = await ensureSearchBarIsOpen();
 
     // Either way, need to re-query the search bar because we recreated it.
-    searchBar = document.querySelector(
-      '*[placeholder="Search in Conversation"]'
-    );
     searchBar.focus();
     searchBar.value = searchText;
 
@@ -304,31 +296,29 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
     const ke_down = new KeyboardEvent("keydown", {
       bubbles: true,
       cancelable: true,
-      keyCode: 13
+      keyCode: 13,
     });
     searchBar.dispatchEvent(ke_down);
 
     const ke_up = new KeyboardEvent("keyup", {
       bubbles: true,
       cancelable: true,
-      keyCode: 13
+      keyCode: 13,
     });
-    document.body.dispatchEvent(ke_up);
+    searchBar.dispatchEvent(ke_up);
 
     // Look for the message that best matches searchText.
     // As a heuristic, we stop at the first message where every highlighted
     // word also appears in the searchText. This has obvious failure modes,
     // but is also probably sufficient for natural language.
-    const nextButton = document.getElementsByClassName(
-      "_3quh _30yy _2t_ _-19 _b-u"
-    )[0];
+    const nextButton = document.querySelectorAll(NEXT_SEARCH_QUERY)[0];
     const expectedMatcherLength = searchText
       .split(/\s+/)
-      .filter(word => word.length > 3).length;
+      .filter((word) => word.length > 3).length;
     console.log("Looking for message with N matches: ", expectedMatcherLength);
     for (let i = 0; i < 20; ++i) {
       await sleep(5000);
-      const highlighted = document.getElementsByClassName("__in");
+      const highlighted = document.querySelectorAll(HIGHLIGHTED_QUERY);
       console.log("Highlighted: ", highlighted);
       if (highlighted.length === 0) {
         // Hit a weird case where the search button wasn't actually pressed.
@@ -336,7 +326,7 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
         console.log("Search text not indexed by facebook. Returning error.");
         return STATUS.ERROR;
       }
-      const allInQuery = [...highlighted].map(el =>
+      const allInQuery = [...highlighted].map((el) =>
         searchText.includes(el.innerHTML)
       );
       console.log("Query selection: ", allInQuery);
@@ -351,23 +341,18 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
     return STATUS.ERROR;
   }
 
-  async function getNextSearchText(searchText) {
+  async function getNextSearchText(prevSearchText) {
     // Get all the candidate search messages. Cut each one down to a 15 word
     // string. Remove any that are the same as the current searchText or have
     // fewer than 5 words with length greater than 3.
-    const candidates = [...document.getElementsByClassName("_3oh- _58nk")];
+    const candidates = [...document.querySelectorAll(SEARCH_CANDIDATE_QUERY)];
     console.log("Candidates: ", candidates);
     const processedCandidates = candidates
-      .map(el =>
-        el.innerText
-          .split(/\s+/)
-          .slice(0, 15)
-          .join(" ")
-      )
-      .filter(text => {
+      .map((el) => el.innerText.split(/\s+/).slice(0, 15).join(" "))
+      .filter((text) => {
         if (
-          text !== searchText &&
-          text.split(/\s+/).filter(word => word.length > 3).length > 5
+          text !== prevSearchText &&
+          text.split(/\s+/).filter((word) => word.length > 3).length > 5
         ) {
           return true;
         }
@@ -392,14 +377,21 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
     return STATUS.ERROR;
   }
 
-  async function longChain(count, runnerCount) {
+  async function longChain(count, runnerCount, searchText) {
+    searchText = searchText ? searchText : "";
     for (let i = 0; i < count || !count; ++i) {
       console.log("On run: ", i);
-      const status = await runner(runnerCount);
-      console.log("Runner status: ", status);
-      if (status === STATUS.COMPLETE) return { status: status };
+
+      // Get next search text.
+      searchText = await getNextSearchText(searchText);
+
+      // const status = await runner(runnerCount);
+      // console.log("Runner status: ", status);
+      // if (status === STATUS.COMPLETE) return { status: status };
     }
-    return { status: STATUS.CONTINUE };
+
+    // return next search text to store for refreshes.
+    // return { status: STATUS.CONTINUE };
   }
 
   // Scroller functions --------------------------------------------------------
@@ -428,21 +420,21 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
       chrome.runtime.sendMessage({
         action: "STORE",
         data: { [currentURL]: { confirmSuccess: true } },
-        response: { tabId: tabId, action: "RELOAD" }
+        response: { tabId: tabId, action: "RELOAD" },
       });
     } else if (status.status === STATUS.CONTINUE) {
       console.log("Completed runner iteration but did not finish removal.");
       chrome.runtime.sendMessage({
         action: "STORE",
         data: { [currentURL]: { isRemoving: true } },
-        response: { tabId: tabId, action: "RELOAD" }
+        response: { tabId: tabId, action: "RELOAD" },
       });
     } else {
       console.log("Failed to complete longChain removal.");
     }
   }
 
-  chrome.runtime.onMessage.addListener(async function(msg, sender) {
+  chrome.runtime.onMessage.addListener(async function (msg, sender) {
     console.log("Got action: ", msg.action);
     const tabId = msg.tabId;
     if (msg.action === "REMOVE") {
@@ -456,21 +448,21 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
       if (maybeSuccess.status === STATUS.CONTINUE) {
         chrome.runtime.sendMessage({
           action: "STORE",
-          data: { [currentURL]: { isRemoving: true } }
+          data: { [currentURL]: { isRemoving: true } },
         });
         removeHandler(tabId);
       } else if (maybeSuccess.status === STATUS.COMPLETE) {
         console.log("Successful confirmation! All cleared!");
         chrome.runtime.sendMessage({
           action: "STORE",
-          data: { [currentURL]: { lastCleared: new Date().toDateString() } }
+          data: { [currentURL]: { lastCleared: new Date().toDateString() } },
         });
       } else {
         console.log("Got error during confirmation attempt. Failing.");
         chrome.runtime.sendMessage({
           action: "STORE",
           data: { [currentURL]: { isRemoving: true } },
-          response: { tabId: tabId, action: "RELOAD" }
+          response: { tabId: tabId, action: "RELOAD" },
         });
       }
     } else if (msg.action === "SCROLL") {
@@ -485,6 +477,6 @@ INFO_BUTTON_QUERY = '[aria-label="Conversation Information"]';
   // Check to see if we need to kick off a removal request.
   console.log("Checking existing removal process.");
   chrome.runtime.sendMessage({
-    action: "CHECK_ALREADY_REMOVING"
+    action: "CHECK_ALREADY_REMOVING",
   });
 })();
