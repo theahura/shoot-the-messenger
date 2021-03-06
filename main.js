@@ -1,7 +1,7 @@
 // The sideways ellipses used to open the 'remove' menu. To the left of each
 // message, generally visible on hover.
-MORE_BUTTONS_HOLDER_QUERY =
-  '[data-testid="outgoing_group"] [aria-label="Message actions"]';
+MORE_BUTTONS_HOLDER_QUERY = '[aria-label="Message actions"]';
+// '[data-testid="outgoing_group"] [aria-label="Message actions"]';
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
@@ -35,6 +35,9 @@ INBOX_QUERY =
 
 // Sticker query.
 STICKER_QUERY = "[aria-label$=sticker]";
+
+// Link query.
+LINK_QUERY = "[alt='XMA Header Image']";
 
 // The button used to keep scrolling up after a search in the messenger chain.
 
@@ -93,11 +96,13 @@ PREVIOUS_SEARCH_QUERY = '[aria-label="Previous"]';
   }
 
   // Removal functions ---------------------------------------------------------
-  function removeStickerRowsFromDOM() {
+  function removeBadRowsFromDOM() {
     const stickers = document.querySelectorAll(STICKER_QUERY);
-    console.log("Removing stickers from dom: ", stickers);
-    for (let sticker of stickers) {
-      let el = sticker;
+    const links = document.querySelectorAll(LINK_QUERY);
+    const badElements = [...stickers].concat([...links]);
+    console.log("Removing bad rows from dom: ", badElements);
+    for (let badEl of badElements) {
+      let el = badEl;
       try {
         while (el.getAttribute("role") !== "row") el = el.parentElement;
         el.remove();
@@ -109,7 +114,7 @@ PREVIOUS_SEARCH_QUERY = '[aria-label="Previous"]';
 
   async function unsendAllVisibleMessages(lastRun, count) {
     // Start by removing messages that cant be unsent (due to fb being weird).
-    removeStickerRowsFromDOM();
+    removeBadRowsFromDOM();
 
     // Click on all ... buttons that let you select 'more' for all messages you
     // sent.
@@ -381,17 +386,13 @@ PREVIOUS_SEARCH_QUERY = '[aria-label="Previous"]';
     searchText = searchText ? searchText : "";
     for (let i = 0; i < count || !count; ++i) {
       console.log("On run: ", i);
-
-      // Get next search text.
-      searchText = await getNextSearchText(searchText);
-
-      // const status = await runner(runnerCount);
-      // console.log("Runner status: ", status);
-      // if (status === STATUS.COMPLETE) return { status: status };
+      const status = await runner(runnerCount);
+      console.log("Runner status: ", status);
+      if (status === STATUS.COMPLETE) return { status: status };
     }
 
-    // return next search text to store for refreshes.
-    // return { status: STATUS.CONTINUE };
+    // We haven't finished, so we need to refresh and continue.
+    return { status: STATUS.CONTINUE };
   }
 
   // Scroller functions --------------------------------------------------------
