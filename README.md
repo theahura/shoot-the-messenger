@@ -1,5 +1,7 @@
 ![Shoot the Messenger Icon](/icon.png)
 
+### Buy me a coffee: venmo @Amol-Kapoor
+
 # Shoot the Messenger
 
 Shoot the Messenger is a Chrome extension that automatically unsends every message you have in a messenger chain. Open a messenger thread, hit 'Remove Messages', and go get a coffee. While you're gone, the extension will click on every 'unsend message' button, leaving behind a trail of nothing.
