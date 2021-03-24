@@ -28,3 +28,5 @@ NOTE: while for the most part unsending messages does not result in notification
 NOTE: not all messages can be unsent. For example, I've been unable to remove some messages with links in them, and stickers give a lot of trouble. This isn't a problem with the extension, so much as a problem with Facebooks removal backend.
 
 NOTE: facebook constantly runs A/B tests, some of which may break this extension. File an issue if something weird happens -- or more likely, doesn't happen.
+
+NOTE: you should be running this in English language mode for this to work as intended.
