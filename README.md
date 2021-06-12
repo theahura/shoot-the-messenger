@@ -4,7 +4,7 @@
 
 # Shoot the Messenger
 
-Shoot the Messenger is a Chrome extension that automatically unsends every message you have in a messenger chain. Open a messenger thread, hit 'Remove Messages', and go get a coffee. While you're gone, the extension will click on every 'unsend message' button, leaving behind a trail of nothing.
+Shoot the Messenger is a Chrome extension that automatically unsends every message you have in a messenger chain. Open a messenger thread, hit 'Remove Messages', and go get a coffee. While you're gone, the extension will click on every 'unsend message' button, leaving behind a trail of nothing. Download on the chrome webstore [here](https://chrome.google.com/webstore/detail/shoot-the-messenger/lkhmjelfhkidbekjkghmbacoaolbcmep?hl=en). 
 
   <img src="redacted.png" alt="Removed messages with Shoot the Messenger" width="400"/>
 
@@ -12,7 +12,7 @@ This extension will remove your messages, but it will also delete the messages o
 
 The extension is currently waiting approval on the Web Store. In the meantime, you can git clone the repo and install it as an unpacked extension. You can see how here: https://developer.chrome.com/docs/extensions/mv2/getstarted/
 
-### The short installation guide.
+### Downloading nightly.
 1) Clone or download the code in this repo somewhere on your computer. 
 2) Go to chrome://extensions and hit developer mode on the top right.
 3) Hit load unpacked, and then select the directory where you downloaded the code from this repo. 
