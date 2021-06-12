@@ -39,33 +39,12 @@ STICKER_QUERY = '[aria-label$=sticker]';
 // Link query.
 LINK_QUERY = "[alt='XMA Header Image']";
 
-// The button used to keep scrolling up after a search in the messenger chain.
+// Thumbs up.
+THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 
-// The info button.
-INFO_QUERY = "[aria-label='Conversation Information']";
-
-// The customize chat button. Requires additional text filtering for "Customize Chat".
-CUSTOMIZE_CHAT_QUERY = '.qzhwtbm6.knvmm38d';
-
-// Div holding the search in conversation button. Requires additional text
-// filtering for "Search in Conversation".
-SEARCH_IN_CONVO_QUERY =
-  '.a8c37x1j.ni8dbmo4.stjgntxs.l9j0dhe7.ltmttdrg.g0qnabr5';
-
-// The currently highlighted search terms.
-HIGHLIGHTED_QUERY =
-  "[data-testid='messenger_incoming_text_row'] [role='gridcell']";
-
-// Queries that were sent by other people, that can be used as possible search
-// terms.
-SEARCH_CANDIDATE_QUERY = '[data-testid="messenger_incoming_text_row"]';
-
-// The actual search bar.
-SEARCH_BAR_QUERY = '[placeholder="Search"]';
-
-// Buttons used for searching up and down searches.
-NEXT_SEARCH_QUERY = '[aria-label="Next"]';
-PREVIOUS_SEARCH_QUERY = '[aria-label="Previous"]';
+// Status messages.
+STATUS_MESSAGES = '.nred35xi.fdg1wqfs.ae35evdt.lt9micmv.gl4o1x5y';
+TIMESTAMPS = '[data-scope="date_break"]';
 
 const STATUS = {
   CONTINUE: 'continue',
@@ -96,15 +75,31 @@ function getSiblings(el) {
 
 // Removal functions ---------------------------------------------------------
 function removeBadRowsFromDOM() {
-  const stickers = document.querySelectorAll(STICKER_QUERY);
-  const links = document.querySelectorAll(LINK_QUERY);
-  const badElements = [...stickers].concat([...links]);
-  console.log('Removing bad rows from dom: ', badElements);
-  for (let badEl of badElements) {
+  const elementsToRemove = [
+    ...document.querySelectorAll(
+      `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`,
+    ),
+  ];
+  console.log('Removing bad rows from dom: ', elementsToRemove);
+  for (let badEl of elementsToRemove) {
     let el = badEl;
     try {
       while (el.getAttribute('role') !== 'row') el = el.parentElement;
       el.remove();
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  const elementsToHide = [
+    ...document.querySelectorAll(`${STATUS_MESSAGES}, ${TIMESTAMPS}`),
+  ];
+  console.log('Hiding bad rows from dom: ', elementsToHide);
+  for (let badEl of elementsToHide) {
+    let el = badEl;
+    try {
+      while (el.getAttribute('role') !== 'row') el = el.parentElement;
+      el.style.display = 'none';
     } catch (err) {
       console.log(err);
     }
@@ -240,143 +235,6 @@ async function runner(count) {
   }
   console.log('Completed run.');
   return STATUS.CONTINUE;
-}
-
-async function ensureSearchBarIsOpen() {
-  // Set up some helpers...
-  const getCustomizeChat = () => {
-    return [...document.querySelectorAll(CUSTOMIZE_CHAT_QUERY)].filter(
-      (el) => el.innerText === 'Customize Chat',
-    );
-  };
-
-  const getSearchInConvo = () => {
-    return [...document.querySelectorAll(SEARCH_IN_CONVO_QUERY)].filter(
-      (el) => el.innerText === 'Search in Conversation',
-    );
-  };
-
-  const getSearchBar = () => {
-    return [...document.querySelectorAll(SEARCH_BAR_QUERY)];
-  };
-
-  // First check to see if the info button is clicked. If it isn't, click it.
-  if (getCustomizeChat().length === 0) {
-    document.querySelectorAll(INFO_QUERY)[0].click();
-    await sleep(2000);
-  }
-
-  // Then check to make sure the customize chat button is clicked.
-  if (getSearchInConvo().length === 0) {
-    getCustomizeChat()[0].click();
-    await sleep(2000);
-  }
-
-  // Then enable the search bar.
-  if (getSearchBar().length === 0) {
-    getSearchInConvo()[0].click();
-    await sleep(2000);
-  }
-
-  const searchBar = getSearchBar()[0];
-  console.log('Got search bar: ', searchBar);
-  return searchBar;
-}
-
-async function enterSearchbar(searchText) {
-  // Get the search bar and set the text to search for. Make sure things have
-  // actually loaded.
-  console.log('Set up search bar. Starting removal process.');
-  const searchBar = await ensureSearchBarIsOpen();
-
-  // Either way, need to re-query the search bar because we recreated it.
-  searchBar.focus();
-  searchBar.value = searchText;
-
-  // Trigger the search.
-  console.log('Searching for: ', searchText);
-  const ke_down = new KeyboardEvent('keydown', {
-    bubbles: true,
-    cancelable: true,
-    keyCode: 13,
-  });
-  searchBar.dispatchEvent(ke_down);
-
-  const ke_up = new KeyboardEvent('keyup', {
-    bubbles: true,
-    cancelable: true,
-    keyCode: 13,
-  });
-  searchBar.dispatchEvent(ke_up);
-
-  // Look for the message that best matches searchText.
-  // As a heuristic, we stop at the first message where every highlighted
-  // word also appears in the searchText. This has obvious failure modes,
-  // but is also probably sufficient for natural language.
-  const nextButton = document.querySelectorAll(NEXT_SEARCH_QUERY)[0];
-  const expectedMatcherLength = searchText
-    .split(/\s+/)
-    .filter((word) => word.length > 3).length;
-  console.log('Looking for message with N matches: ', expectedMatcherLength);
-  for (let i = 0; i < 20; ++i) {
-    await sleep(5000);
-    const highlighted = document.querySelectorAll(HIGHLIGHTED_QUERY);
-    console.log('Highlighted: ', highlighted);
-    if (highlighted.length === 0) {
-      // Hit a weird case where the search button wasn't actually pressed.
-      // Return error.
-      console.log('Search text not indexed by facebook. Returning error.');
-      return STATUS.ERROR;
-    }
-    const allInQuery = [...highlighted].map((el) =>
-      searchText.includes(el.innerHTML),
-    );
-    console.log('Query selection: ', allInQuery);
-    if (allInQuery.filter(Boolean).length >= expectedMatcherLength) {
-      console.log('Got the closest match for search text.');
-      return STATUS.CONTINUE;
-    }
-    console.log('Did not find match for search text, continuing');
-    nextButton.click();
-  }
-  console.log('Could not find any matches for search: ', searchText);
-  return STATUS.ERROR;
-}
-
-async function getNextSearchText(prevSearchText) {
-  // Get all the candidate search messages. Cut each one down to a 15 word
-  // string. Remove any that are the same as the current searchText or have
-  // fewer than 5 words with length greater than 3.
-  const candidates = [...document.querySelectorAll(SEARCH_CANDIDATE_QUERY)];
-  console.log('Candidates: ', candidates);
-  const processedCandidates = candidates
-    .map((el) => el.innerText.split(/\s+/).slice(0, 15).join(' '))
-    .filter((text) => {
-      if (
-        text !== prevSearchText &&
-        text.split(/\s+/).filter((word) => word.length > 3).length > 5
-      ) {
-        return true;
-      }
-      return false;
-    });
-  console.log('Processed candidates: ', processedCandidates);
-
-  // Next, reset the search bar to bring us back down to the beginning, and
-  // then try and find the next best matching search point.
-  for (let candidate of processedCandidates) {
-    console.log('Testing search candidate: ', candidate);
-    if ((await enterSearchbar(candidate)) === STATUS.CONTINUE) {
-      console.log('Found match for candidate: ', candidate);
-      return { status: STATUS.CONTINUE, data: candidate };
-    }
-  }
-
-  console.log(
-    'No candidate within list of processedCandidates found.',
-    processedCandidates,
-  );
-  return STATUS.ERROR;
 }
 
 async function longChain(count, runnerCount, searchText) {
