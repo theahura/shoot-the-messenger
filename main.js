@@ -187,22 +187,26 @@ async function unsendAllVisibleMessages(lastRun, count) {
     console.log('Reached top of chain: ', topOfChain);
     return { status: STATUS.COMPLETE };
   } else if (scroller_ && scroller_.scrollTop !== 0) {
-    // If we don't have any load more buttons, just try scrolling up.
-    console.log('Trying to scroll up.');
-    try {
-      scroller_.scrollTop = 0;
-    } catch (err) {
-      console.log(err);
-    }
+    let loader = null;
 
-    // Don't continue until the loading animation is gone.
-    await sleep(2000);
-    let loader = document.querySelector(LOADING_QUERY);
-    while (loader) {
-      console.log('Waiting for loading messages to populate...', loader);
+    // Sometimes the loader gets stuck. Move on after some attempts.
+    let loaderFailsafe = 3;
+    do {
+      // If we don't have any load more buttons, just try scrolling up.
+      console.log('Trying to scroll up.');
+      try {
+        scroller_.scrollTop = 0;
+      } catch (err) {
+        console.log(err);
+      }
+
+      // Don't continue until the loading animation is gone.
       await sleep(2000);
       loader = document.querySelector(LOADING_QUERY);
-    }
+      console.log('Waiting for loading messages to populate...', loader);
+      await sleep(2000);
+      loaderFailsafe--;
+    } while (loader && loaderFailsafe > 0);
   } else {
     // Something is wrong. We dont have load more OR scrolling, but we havent
     // hit the top either.
