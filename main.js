@@ -15,7 +15,7 @@ OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
 COULDNT_REMOVE_QUERY = '._3quh._30yy._2t_._5ixy.layerCancel';
 
 // The button used to confirm the message removal.
-REMOVE_CONFIRMATION_QUERY = '[aria-label="Remove"]';
+REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"],[aria-label="Remove"]';
 
 // The holder for all of the messages in the chat.
 SCROLLER_QUERY =
@@ -75,11 +75,8 @@ function getSiblings(el) {
 
 // Removal functions ---------------------------------------------------------
 function removeBadRowsFromDOM() {
-  const elementsToRemove = [
-    ...document.querySelectorAll(
-      `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`,
-    ),
-  ];
+  const query = `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`;
+  const elementsToRemove = [...document.querySelectorAll(query)];
   console.log('Removing bad rows from dom: ', elementsToRemove);
   for (let badEl of elementsToRemove) {
     let el = badEl;
@@ -151,7 +148,10 @@ async function unsendAllVisibleMessages(lastRun, count) {
 
       // Click on all of the 'confirm remove' buttons.
       await sleep(5000);
-      let unsend_buttons = document.querySelectorAll(REMOVE_CONFIRMATION_QUERY);
+      let unsend_buttons = document.querySelectorAll(
+        REMOVE_CONFIRMATION_QUERY,
+      );
+      console.log('Trying to unsend: ', unsend_buttons);
 
       while (unsend_buttons.length > 0) {
         console.log('Unsending: ', unsend_buttons);
@@ -268,7 +268,8 @@ async function scrollToBottom(limit) {
 }
 
 // Handlers ------------------------------------------------------------------
-const currentURL = location.protocol + '//' + location.host + location.pathname;
+const currentURL =
+  location.protocol + '//' + location.host + location.pathname;
 
 async function removeHandler(tabId) {
   const status = await longChain(5, 5);
