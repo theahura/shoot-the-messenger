@@ -29,10 +29,6 @@ LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
 TOP_OF_CHAIN_QUERY =
   '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.gk29lw5a.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.d9wwppkn.fe6kdd0r.mau55g9w.c8b282yb.hrzyx87i.o3w64lxj.b2s5l15y.hnhda86s.oo9gr5id.oqcyycmt';
 
-// The div holding the inbox (used for scrolling).
-INBOX_QUERY =
-  '.q5bimw55.rpm2j7zs.k7i0oixp.gvuykj2m.j83agx80.cbu4d94t.ni8dbmo4.eg9m0zos.l9j0dhe7.du4w35lb.ofs802cu.pohlnb88.dkue75c7.mb9wzai9.d8ncny3e.buofh1pr.g5gj957u.tgvbjcpo.l56l04vs.r57mb794.kh7kg01d.c3g1iek1.k4xni2cv';
-
 // Sticker query.
 STICKER_QUERY = '[aria-label$=sticker]';
 
@@ -51,6 +47,8 @@ const STATUS = {
   ERROR: 'error',
   COMPLETE: 'complete',
 };
+
+let DELAY = 5;
 
 // Helper functions ----------------------------------------------------------
 function sleep(ms) {
@@ -174,7 +172,11 @@ async function unsendAllVisibleMessages(lastRun, count) {
   // If this is the last run before the runner cycle finishes, dont keep
   // scrolling up.
   if (lastRun) {
-    return { status: STATUS.CONTINUE, data: 500 };
+    if (more_button_count === 0) {
+      return { status: STATUS.CONTINUE, data: 500 };
+    } else {
+      return { status: STATUS.CONTINUE, data: DELAY * 1000 };
+    }
   }
 
   // Cleaned out all the couldnt remove buttons. Now, check to see if we need
@@ -222,7 +224,7 @@ async function unsendAllVisibleMessages(lastRun, count) {
   if (more_button_count === 0) {
     return { status: STATUS.CONTINUE, data: 500 };
   } else {
-    return { status: STATUS.CONTINUE, data: 5000 };
+    return { status: STATUS.CONTINUE, data: DELAY * 1000 };
   }
 }
 
@@ -232,6 +234,7 @@ async function runner(count) {
     console.log('Running count:', i);
     const sleepTime = await unsendAllVisibleMessages(i == count - 1, 100);
     if (sleepTime.status === STATUS.CONTINUE) {
+      console.log('Sleeping to avoid rate limits: ', sleepTime.data);
       await sleep(sleepTime.data);
     } else if (sleepTime.status === STATUS.COMPLETE) {
       return STATUS.COMPLETE;
@@ -252,19 +255,6 @@ async function longChain(count, runnerCount, searchText) {
 
   // We haven't finished, so we need to refresh and continue.
   return { status: STATUS.CONTINUE };
-}
-
-// Scroller functions --------------------------------------------------------
-function scrollToBottomHelper() {
-  let scroller = document.querySelectorAll(INBOX_QUERY)[0];
-  scroller.scrollTop = scroller.scrollHeight;
-}
-
-async function scrollToBottom(limit) {
-  for (let i = 0; i < limit; ++i) {
-    scrollToBottomHelper();
-    await sleep(2000);
-  }
 }
 
 // Handlers ------------------------------------------------------------------
@@ -340,10 +330,11 @@ async function removeHandler(tabId) {
           response: { tabId: tabId, action: 'RELOAD' },
         });
       }
-    } else if (msg.action === 'SCROLL') {
-      scrollToBottom(100);
     } else if (msg.action === 'RELOAD') {
       window.location = window.location.pathname;
+    } else if (msg.action === 'UPDATE_DELAY') {
+      console.log('Setting delay to', msg.data, 'seconds');
+      DELAY = msg.data;
     } else {
       console.log('Unknown action.');
     }

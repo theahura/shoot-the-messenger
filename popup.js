@@ -4,15 +4,16 @@ document.getElementById('RemoveMessages').addEventListener('click', () => {
   });
 });
 
-document.getElementById('ScrollToBottom').addEventListener('click', () => {
-  chrome.extension.sendMessage({
-    action: 'SCROLL',
-  });
-});
-
 document.getElementById('Stop').addEventListener('click', () => {
   chrome.extension.sendMessage({
     action: 'STOP',
+  });
+});
+
+document.getElementById('Delay').addEventListener('input', (e) => {
+  chrome.extension.sendMessage({
+    action: 'UPDATE_DELAY',
+    data: e.target.value,
   });
 });
 

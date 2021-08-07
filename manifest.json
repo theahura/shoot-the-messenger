@@ -3,7 +3,7 @@
 
   "name": "Shoot the Messenger",
   "description": "This extension sequentially unsends all messenges in a messenger chain.",
-  "version": "2.0.1",
+  "version": "3.0.0",
 
   "content_scripts": [
     {
