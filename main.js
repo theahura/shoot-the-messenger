@@ -294,7 +294,7 @@ async function removeHandler(tabId) {
   }
 }
 
-(function () {
+(async function () {
   chrome.runtime.onMessage.addListener(async function (msg, sender) {
     // Make sure we are using english language messenger.
     if (document.documentElement.lang !== 'en') {
@@ -307,10 +307,16 @@ async function removeHandler(tabId) {
     console.log('Got action: ', msg.action);
     const tabId = msg.tabId;
     if (msg.action === 'REMOVE') {
-      removeHandler(tabId);
-    } else if (msg.action === 'CONFIRM_REMOVE') {
-      const keep_removing = confirm('Continue removing messages?');
-      if (keep_removing) removeHandler(tabId);
+      const doRemove = confirm(
+        'Removal will nuke your messages and will prevent you from seeing the messages of other people in this chat. We HIGHLY recommend backing up your messages first. Continue?',
+      );
+      if (doRemove) {
+        removeHandler(tabId);
+      } else {
+        chrome.runtime.sendMessage({
+          action: 'STOP',
+        });
+      }
     } else if (msg.action === 'CONFIRM_SUCCESS') {
       await sleep(10000);
       const maybeSuccess = runner(3);
