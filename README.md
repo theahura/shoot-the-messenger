@@ -28,6 +28,13 @@ If you want the latest version, you can git clone the repo and install it as an 
 4) If you did everything right, the shoot the messenger logo should appear in your extension list.
 5) Go to messenger.com and click on a thread you want to delete. Click the extension, hit remove, and hopefully things happen.
 
+# How to Use
+1) Go to messenger.com
+2) Open the messenger chain that you want to delete
+3) Click the extension and hit remove messages
+4) Leave the tab running. If you want to keep using the web on your computer, open a new browser.
+5) If you start getting hit with rate limiting by Facebook (generally an error, 'Cannot unsend at this time'), increase the `Rate limit pause` time in the Extension popup. The default is 5 seconds.
+
 ### Misc notes.
 
 NOTE: while for the most part unsending messages does not result in notifications for the other party, some iPhone users reported getting a lot of notifications as messages were being removed. The content of the message was not present. Specifically, I've had friends with Messenger v291.2+ on iPhone getting notifications when messages are removed. Unfortunately, because of the nature of Shoot the Messenger, this can result in a lot of inadvertent spam sent to Facebook friends. As far as I can tell, notifications are NOT sent if you are removing messages from a thread where the other person is NOT your facebook friend. None of this applies to android users.
