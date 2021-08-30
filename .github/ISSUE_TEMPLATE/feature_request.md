@@ -8,6 +8,6 @@ assignees: ''
 ---
 
 **Shoot the Messenger cannot support removing only your messages.**
-See #33, #26, #15 for more. This is due to how Chrome manages memory, and because Facebook does not provide a mechanism to go to an arbitrary point in the conversation programmatically. 
+See #46 for an explanation why. If you have ideas on how to implement this feature, post to #46.
 
 **Describe the feature you'd like**
