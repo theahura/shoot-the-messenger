@@ -201,7 +201,7 @@ async function unsendAllVisibleMessages(isLastRun) {
 
   // Now see if we need to scroll up.
   const scroller_ = document.querySelector(SCROLLER_QUERY);
-  const topOfChainText = document.querySelector(TOP_OF_CHAIN_QUERY);
+  const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
   await sleep(2000);
   if (topOfChainText.length > 1) {
     // We hit the top. Bubble this info back up.
