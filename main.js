@@ -1,7 +1,6 @@
 // The sideways ellipses used to open the 'remove' menu. To the left of each
 // message, generally visible on hover.
-MORE_BUTTONS_HOLDER_QUERY = '[aria-label="Message actions"]';
-// '[data-testid="outgoing_group"] [aria-label="Message actions"]';
+MORE_BUTTONS_HOLDER_QUERY = '[data-testid="message-container"]';
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
@@ -25,21 +24,26 @@ MESSAGES_QUERY = '[aria-label=Messages]';
 // The loading animation.
 LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
 
-// The div at the very top of the message chain.
+// The div at the very top of the message chain. This will also capture the
+// text of the chat itself, so when using this to see if we hit the top make
+// sure to check for TWO hits.
 TOP_OF_CHAIN_QUERY =
-  '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.gk29lw5a.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.d9wwppkn.fe6kdd0r.mau55g9w.c8b282yb.hrzyx87i.o3w64lxj.b2s5l15y.hnhda86s.oo9gr5id.oqcyycmt';
+  '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.tia6h79c.fe6kdd0r.mau55g9w.c8b282yb.iv3no6db.a5q79mjw.g1cxx5fr.lrazzd5p.oo9gr5id.oqcyycmt';
 
 // Sticker query.
 STICKER_QUERY = '[aria-label$=sticker]';
 
 // Link query.
-LINK_QUERY = "[alt='XMA Header Image']";
+LINK_QUERY =
+  '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.d9wwppkn.fe6kdd0r.mau55g9w.c8b282yb.hrzyx87i.jq4qci2q.a3bd9o3v.lrazzd5p.oo9gr5id.hzawbc8m';
 
 // Thumbs up.
 THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 
 // Status messages.
-STATUS_MESSAGES = '.nred35xi.fdg1wqfs.ae35evdt.lt9micmv.gl4o1x5y';
+STATUS_MESSAGES =
+  '.f2fs36ck.r9r71o1u.eagtllmd.pipptul6.oqcyycmt.km676qkl.ad2k81qe.myj7ivm5.f9o22wc5';
+
 TIMESTAMPS = '[data-scope="date_break"]';
 
 const STATUS = {
@@ -55,28 +59,40 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getSiblings(el) {
-  // Setup siblings array and get the first sibling
-  var siblings = [];
-  var sibling = el.parentNode.firstChild;
-
-  // Loop through each sibling and push to the array
-  while (sibling) {
-    if (sibling.nodeType === 1 && sibling !== el) {
-      siblings.push(sibling);
-    }
-    sibling = sibling.nextSibling;
-  }
-
-  return siblings;
-}
-
 // Removal functions ---------------------------------------------------------
-function removeBadRowsFromDOM() {
-  const query = `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`;
-  const elementsToRemove = [...document.querySelectorAll(query)];
+async function prepareDOMForRemoval() {
+  // Get all ... buttons that let you select 'more' for all messages you sent.
+  const elementsToUnsend = [
+    ...document.querySelectorAll(MORE_BUTTONS_HOLDER_QUERY),
+  ];
+
+  // Get the elements we know we cant unsend.
+  const removeQuery = `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`;
+  const elementsToRemove = [...document.querySelectorAll(removeQuery)];
+
+  // Status and timestamp messages are used by messenger to append messages to.
+  // We cant just remove these if there are other messages that still need to
+  // be appended -- otherwise, React will crash. So we'll remove these
+  // 'carefully', i.e. only if there are no other messages around. See below.
+  const removeCarefullyQuery = `${STATUS_MESSAGES}, ${TIMESTAMPS}`;
+  const elementsToRemoveCarefully = [
+    ...document.querySelectorAll(removeCarefullyQuery),
+  ].filter((el) => {
+    return el.style.display !== 'none';
+  });
+
+  // Once we know what to remove, start the loading process for new messages
+  // just in case we lose the scroller.
+  const scroller_ = document.querySelector(SCROLLER_QUERY);
+  scroller_.scrollTop = 0;
+
+  // We cant delete all of the elements because react will crash. Keep the
+  // first one.
+  elementsToRemove.shift();
+  elementsToRemove.reverse();
   console.log('Removing bad rows from dom: ', elementsToRemove);
   for (let badEl of elementsToRemove) {
+    await sleep(100);
     let el = badEl;
     try {
       while (el.getAttribute('role') !== 'row') el = el.parentElement;
@@ -86,129 +102,122 @@ function removeBadRowsFromDOM() {
     }
   }
 
-  const elementsToHide = [
-    ...document.querySelectorAll(`${STATUS_MESSAGES}, ${TIMESTAMPS}`),
-  ];
-  console.log('Hiding bad rows from dom: ', elementsToHide);
-  for (let badEl of elementsToHide) {
-    let el = badEl;
-    try {
-      while (el.getAttribute('role') !== 'row') el = el.parentElement;
-      el.style.display = 'none';
-    } catch (err) {
-      console.log(err);
-    }
-  }
-}
-
-async function unsendAllVisibleMessages(lastRun, count) {
-  // Start by removing messages that cant be unsent (due to fb being weird).
-  removeBadRowsFromDOM();
-
-  // Click on all ... buttons that let you select 'more' for all messages you
-  // sent.
-  const more_buttons_holders = document.querySelectorAll(
-    MORE_BUTTONS_HOLDER_QUERY,
-  );
-  console.log('Found hidden menu holders: ', more_buttons_holders);
-  [...more_buttons_holders].map((el) => {
-    el.click();
-  });
-
-  let more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
+  // Remove some elements carefully, by checking to see if they are surrounded
+  // by siblings.
+  console.log('Hiding bad rows from dom: ', elementsToRemoveCarefully);
+  const elementsToRemoveCarefullyRows = elementsToRemoveCarefully.flatMap(
     (el) => {
-      return el.getAttribute('data-clickcount') < 5;
+      try {
+        while (el.getAttribute('role') !== 'row') el = el.parentElement;
+        return [el];
+      } catch (err) {
+        return [];
+      }
     },
   );
 
-  const more_button_count = more_buttons.length;
-  console.log('Clicking more buttons: ', more_buttons);
-
-  while (more_buttons.length > 0) {
-    console.log('Clicking more buttons: ', more_buttons);
-    [...more_buttons].map((el) => {
-      el.click();
-      const prevClickCount = el.getAttribute('data-clickcount');
-      el.setAttribute(
-        'data-clickcount',
-        prevClickCount ? prevClickCount + 1 : 1,
-      );
-    });
-    await sleep(2000);
-
-    // Click on all of the 'remove' popups that appear.
-    let remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
-    while (remove_buttons.length > 0) {
-      console.log('Clicking remove buttons: ', remove_buttons);
-      [...remove_buttons].map((el) => {
-        el.click();
-      });
-
-      // Click on all of the 'confirm remove' buttons.
-      await sleep(5000);
-      let unsend_buttons = document.querySelectorAll(
-        REMOVE_CONFIRMATION_QUERY,
-      );
-      console.log('Trying to unsend: ', unsend_buttons);
-
-      while (unsend_buttons.length > 0) {
-        console.log('Unsending: ', unsend_buttons);
-        for (let unsend_button of unsend_buttons) {
-          unsend_button.click();
-        }
-        await sleep(5000);
-        unsend_buttons = document.querySelectorAll(REMOVE_CONFIRMATION_QUERY);
-      }
-
-      remove_buttons = document.querySelectorAll(REMOVE_BUTTON_QUERY);
+  for (let row of elementsToRemoveCarefullyRows) {
+    if (elementsToRemoveCarefullyRows.includes(row.nextSibling)) {
+      row.remove();
     }
-    more_buttons = [...document.querySelectorAll(MORE_BUTTONS_QUERY)].filter(
-      (el) => {
-        return el.getAttribute('data-clickcount') < 5;
-      },
-    );
   }
+
+  // Filter the elementsToUnsend list by what is still in the DOM.
+  return elementsToUnsend.filter((el) => {
+    return document.body.contains(el);
+  });
+}
+
+async function unsendAllVisibleMessages(isLastRun) {
+  // Prepare the DOM. Get the elements we can remove. Load the next set. Hide
+  // the rest.
+  const moreButtonsHolders = await prepareDOMForRemoval();
+
+  // Drop the first element in the list, because react needs something to load
+  // more messages onto.
+  moreButtonsHolders.shift();
+  console.log('Found hidden menu holders: ', moreButtonsHolders);
+
+  for (el of moreButtonsHolders) {
+    // Trigger on hover.
+    console.log('Triggering hover on: ', el);
+    el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    await sleep(100);
+
+    // Get the more button, unless weve clicked it too many times.
+    const moreButton = document.querySelectorAll(MORE_BUTTONS_QUERY)[0];
+    if (!moreButton) {
+      console.log('No moreButton found! Skipping holder: ', el);
+      continue;
+    }
+    if (moreButton.getAttribute('data-clickcount') > 5) {
+      console.log('Clicked moreButton too many times, skipping holder: ', el);
+      continue;
+    }
+    console.log('Clicking more button: ', moreButton);
+    moreButton.click();
+
+    // Update the click count on the button.
+    const prevClickCount = moreButton.getAttribute('data-clickcount');
+    moreButton.setAttribute(
+      'data-clickcount',
+      prevClickCount ? prevClickCount + 1 : 1,
+    );
+
+    // Hit the remove button to get the popup.
+    await sleep(100);
+    const removeButton = document.querySelectorAll(REMOVE_BUTTON_QUERY)[0];
+    if (!removeButton) {
+      console.log('No removeButton found! Skipping holder: ', el);
+      continue;
+    }
+    console.log('Clicking remove button: ', removeButton);
+    removeButton.click();
+
+    // Hit unsend on the popup.
+    await sleep(500);
+    const unsendButton = document.querySelectorAll(
+      REMOVE_CONFIRMATION_QUERY,
+    )[0];
+    if (!unsendButton) {
+      console.log('No unsendButton found! Skipping holder: ', el);
+      continue;
+    }
+    console.log('Clicking unsend button: ', unsendButton);
+    unsendButton.click();
+    await sleep(500);
+  }
+  console.log('Removed all holders.');
 
   // If this is the last run before the runner cycle finishes, dont keep
   // scrolling up.
-  if (lastRun) {
-    if (more_button_count === 0) {
-      return { status: STATUS.CONTINUE, data: 500 };
+  if (isLastRun) {
+    if (moreButtonsHolders.length === 0) {
+      return { status: STATUS.CONTINUE, data: 100 };
     } else {
       return { status: STATUS.CONTINUE, data: DELAY * 1000 };
     }
   }
 
-  // Cleaned out all the couldnt remove buttons. Now, check to see if we need
-  // to hit the 'Load More' button or if we need to scroll up.
+  // Now see if we need to scroll up.
   const scroller_ = document.querySelector(SCROLLER_QUERY);
-  const topOfChain = document.querySelector(TOP_OF_CHAIN_QUERY);
+  const topOfChainText = document.querySelector(TOP_OF_CHAIN_QUERY);
   await sleep(2000);
-  if (topOfChain) {
+  if (topOfChainText.length > 1) {
     // We hit the top. Bubble this info back up.
     console.log('Reached top of chain: ', topOfChain);
     return { status: STATUS.COMPLETE };
   } else if (scroller_ && scroller_.scrollTop !== 0) {
+    // Scroll up. Wait for the loader.
     let loader = null;
+    scroller_.scrollTop = 0;
 
-    // Sometimes the loader gets stuck. Move on after some attempts.
-    let loaderFailsafe = 3;
-    do {
-      // If we don't have any load more buttons, just try scrolling up.
-      console.log('Trying to scroll up.');
-      try {
-        scroller_.scrollTop = 0;
-      } catch (err) {
-        console.log(err);
-      }
-
-      // Don't continue until the loading animation is gone.
-      await sleep(2000);
-      loader = document.querySelector(LOADING_QUERY);
+    for (const i = 0; i < 5; ++i) {
       console.log('Waiting for loading messages to populate...', loader);
       await sleep(2000);
-      loaderFailsafe--;
-    } while (loader && loaderFailsafe > 0);
+      loader = document.querySelector(LOADING_QUERY);
+      if (!loader) break; // Done loading when the loading animation is gone.
+    }
   } else {
     // Something is wrong. We dont have load more OR scrolling, but we havent
     // hit the top either.
@@ -221,8 +230,8 @@ async function unsendAllVisibleMessages(lastRun, count) {
   // And then run the whole thing again after 500ms for loading if we didnt
   // have any removals (to zoom up quickly), or 5s if we did have removals to
   // avoid any rate limiting.
-  if (more_button_count === 0) {
-    return { status: STATUS.CONTINUE, data: 500 };
+  if (moreButtonsHolders.length === 0) {
+    return { status: STATUS.CONTINUE, data: 100 };
   } else {
     return { status: STATUS.CONTINUE, data: DELAY * 1000 };
   }
@@ -232,7 +241,7 @@ async function runner(count) {
   console.log('Starting runner removal for N iterations: ', count);
   for (let i = 0; i < count || !count; ++i) {
     console.log('Running count:', i);
-    const sleepTime = await unsendAllVisibleMessages(i == count - 1, 100);
+    const sleepTime = await unsendAllVisibleMessages(i == count - 1);
     if (sleepTime.status === STATUS.CONTINUE) {
       console.log('Sleeping to avoid rate limits: ', sleepTime.data);
       await sleep(sleepTime.data);
@@ -244,25 +253,12 @@ async function runner(count) {
   return STATUS.CONTINUE;
 }
 
-async function longChain(count, runnerCount, searchText) {
-  searchText = searchText ? searchText : '';
-  for (let i = 0; i < count || !count; ++i) {
-    console.log('On run: ', i);
-    const status = await runner(runnerCount);
-    console.log('Runner status: ', status);
-    if (status === STATUS.COMPLETE) return { status: status };
-  }
-
-  // We haven't finished, so we need to refresh and continue.
-  return { status: STATUS.CONTINUE };
-}
-
 // Handlers ------------------------------------------------------------------
 const currentURL =
   location.protocol + '//' + location.host + location.pathname;
 
 async function removeHandler(tabId) {
-  const status = await longChain(5, 5);
+  const status = await runner(25);
   if (status.status === STATUS.COMPLETE) {
     console.log(
       'Possibly successfully removed all messages. Running one more confirmation attempt.',
@@ -282,6 +278,41 @@ async function removeHandler(tabId) {
   } else {
     console.log('Failed to complete longChain removal.');
   }
+}
+
+// Hacky fix to avoid issues with removing/manipulating the DOM from outside
+// react control.
+// See: https://github.com/facebook/react/issues/11538#issuecomment-417504600
+if (typeof Node === 'function' && Node.prototype) {
+  const originalRemoveChild = Node.prototype.removeChild;
+  Node.prototype.removeChild = function (child) {
+    if (child.parentNode !== this) {
+      if (console) {
+        console.error(
+          'Cannot remove a child from a different parent',
+          child,
+          this,
+        );
+      }
+      return child;
+    }
+    return originalRemoveChild.apply(this, arguments);
+  };
+
+  const originalInsertBefore = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function (newNode, referenceNode) {
+    if (referenceNode && referenceNode.parentNode !== this) {
+      if (console) {
+        console.error(
+          'Cannot insert before a reference node from a different parent',
+          referenceNode,
+          this,
+        );
+      }
+      return newNode;
+    }
+    return originalInsertBefore.apply(this, arguments);
+  };
 }
 
 (async function () {
