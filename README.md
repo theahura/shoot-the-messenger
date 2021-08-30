@@ -37,10 +37,7 @@ If you want the latest version, you can git clone the repo and install it as an 
 
 ### Misc notes.
 
-NOTE: while for the most part unsending messages does not result in notifications for the other party, some iPhone users reported getting a lot of notifications as messages were being removed. The content of the message was not present. Specifically, I've had friends with Messenger v291.2+ on iPhone getting notifications when messages are removed. Unfortunately, because of the nature of Shoot the Messenger, this can result in a lot of inadvertent spam sent to Facebook friends. As far as I can tell, notifications are NOT sent if you are removing messages from a thread where the other person is NOT your facebook friend. None of this applies to android users.
-
-NOTE: not all messages can be unsent. For example, I've been unable to remove some messages with links in them, and stickers give a lot of trouble. This isn't a problem with the extension, so much as a problem with Facebooks removal backend.
-
-NOTE: facebook constantly runs A/B tests, some of which may break this extension. File an issue if something weird happens -- or more likely, doesn't happen.
-
-NOTE: you should be running this in English language mode for this to work as intended.
+- If you're looking for something similar on Insta, checkout https://github.com/pishangujeniya/instagram-helper.
+- While for the most part unsending messages does not result in notifications for the other party, some iPhone users reported getting a lot of notifications as messages were being removed. The content of the message was not present. Specifically, I've had friends with Messenger v291.2+ on iPhone getting notifications when messages are removed. Unfortunately, because of the nature of Shoot the Messenger, this can result in a lot of inadvertent spam sent to Facebook friends. As far as I can tell, notifications are NOT sent if you are removing messages from a thread where the other person is NOT your facebook friend. None of this applies to android users.
+- not all messages can be unsent. For example, I've been unable to remove some messages with links in them, and stickers give a lot of trouble. This isn't a problem with the extension, so much as a problem with Facebooks removal backend.
+- facebook constantly runs A/B tests, some of which may break this extension. File an issue if something weird happens -- or more likely, doesn't happen.
