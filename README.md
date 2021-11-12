@@ -1,6 +1,6 @@
 ![Shoot the Messenger Icon](/icon.png)
 
-### Buy me a coffee: venmo @Amol-Kapoor
+### Buy me a coffee ($3): venmo @Amol-Kapoor
 
 # Shoot the Messenger
 
