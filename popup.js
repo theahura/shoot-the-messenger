@@ -10,13 +10,6 @@ document.getElementById('Stop').addEventListener('click', () => {
   });
 });
 
-document.getElementById('Delay').addEventListener('input', (e) => {
-  chrome.extension.sendMessage({
-    action: 'UPDATE_DELAY',
-    data: e.target.value,
-  });
-});
-
 // If the active tab was previously cleared, update the popup with the info.
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   chrome.storage.local.get([tabs[0].url], (result) => {
