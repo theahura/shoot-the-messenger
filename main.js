@@ -38,8 +38,7 @@ THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 MESSAGE_CONTAINER_QUERY = '[data-testid="message-container"]';
 SEARCH_BAR_QUERY = '[aria-label="Search Messenger"]';
 TRIGGER_SEARCH_QUERY = '[role="presentation"][tabindex="-1"]';
-HIGHLIGHTED_TEXT_QUERY =
-  'span[role="gridcell"] div[role="button"][tabindex="0"]';
+HIGHLIGHTED_TEXT_QUERY = 'span[role="gridcell"] div[role="button"]';
 NEXT_QUERY = '[aria-label="Next"]';
 
 const STATUS = {
@@ -48,7 +47,8 @@ const STATUS = {
   COMPLETE: 'complete',
 };
 
-let DELAY = 5;
+const DELAY = 5;
+const RUNNER_COUNT = 25;
 
 const currentURL =
   location.protocol + '//' + location.host + location.pathname;
@@ -66,7 +66,11 @@ function reload() {
 
 function setNativeValue(element, value) {
   // See https://stackoverflow.com/a/53797269/3269537.
-  const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
+  // and https://github.com/facebook/react/issues/10135#issuecomment-401496776
+  const valueSetter = Object.getOwnPropertyDescriptor(
+    Object.getPrototypeOf(element),
+    'value',
+  ).set;
   const prototype = Object.getPrototypeOf(element);
   const prototypeValueSetter = Object.getOwnPropertyDescriptor(
     prototype,
@@ -243,6 +247,8 @@ async function runner(count) {
       await sleep(sleepTime.data);
     } else if (sleepTime.status === STATUS.COMPLETE) {
       return STATUS.COMPLETE;
+    } else {
+      return STATUS.ERROR;
     }
   }
   console.log('Completed run.');
@@ -252,15 +258,27 @@ async function runner(count) {
 // Search functions ---------------------------------------------------------
 
 async function runSearch(searchMessage) {
-  const searchBar = document.querySelectorAll(SEARCH_BAR_QUERY)[0];
+  let searchBar = null;
+  for (let i = 0; i < 5; ++i) {
+    searchBar = document.querySelectorAll(SEARCH_BAR_QUERY)[0];
+    if (!searchBar) await sleep(3000);
+  }
+
+  if (!searchBar) {
+    console.log('Could not load search bar after 5 sec. Failing.');
+    return false;
+  }
+
+  console.log('Found searchBar', searchBar);
   setNativeValue(searchBar, searchMessage);
-  await sleep(100);
+  await sleep(1000);
   document.querySelectorAll(TRIGGER_SEARCH_QUERY)[0].click();
   await sleep(3000);
 
   for (const i = 0; i < 20; ++i) {
     // Check the highlighted text.
     const highlighted = [...document.querySelectorAll(HIGHLIGHTED_TEXT_QUERY)];
+    console.log('Found highlighted elements: ', highlighted);
     if (highlighted[0].parentElement.parentElement.innerText === searchMessage)
       return true;
 
@@ -290,6 +308,7 @@ async function getSearchableMessage(prevMessage) {
   // top to bottom.
   for (const message of filtered) {
     // Run the search.
+    console.log('Testing candidate message: ', message);
     if (runSearch(message)) return message;
   }
 
@@ -299,31 +318,37 @@ async function getSearchableMessage(prevMessage) {
 }
 
 // Handlers ------------------------------------------------------------------
-async function _removeHandler(count) {
-  const status = await runner(count);
-  if (status.status === STATUS.COMPLETE) {
+async function removeHandler() {
+  const maybeSearchMessage = localStorage.getItem(searchMessageKey);
+  if (maybeSearchMessage) {
+    if (!(await runSearch(localStorage.getItem(searchMessageKey)))) {
+      alert(`Unable to find message: ${maybeSearchMessage}. Failing.`);
+      return null;
+    }
+  }
+
+  const status = await runner(RUNNER_COUNT);
+
+  if (status === STATUS.COMPLETE) {
     localStorage.removeItem(searchMessageKey);
     localStorage.setItem(lastClearedKey, new Date().toString());
-  } else if (status.status === STATUS.CONTINUE) {
+    console.log('Success!');
+    alert('Successfully cleared all messages!');
+  } else if (status === STATUS.CONTINUE) {
     console.log('Completed runner iteration but did not finish removal.');
     const lastSearched = localStorage.getItem(searchMessageKey);
     const searchableMessage = await getSearchableMessage(lastSearched);
     if (searchableMessage) {
-      localStorage.setItem(searchableMessage);
+      console.log('Going to search for: ', searchableMessage);
+      localStorage.setItem(searchMessageKey, searchableMessage);
+      return reload();
     } else {
-      _removeHandler(5); // Try scrolling up some more.
+      console.log('Could not find searchable message...');
     }
-    reload();
-  } else {
-    console.log('Failed to complete removal.');
   }
-}
 
-async function removeHandler() {
-  if (localStorage.getItem(searchMessageKey)) {
-    await runSearch(localStorage.getItem(searchMessageKey));
-  }
-  _removeHandler(25);
+  console.log('Failed to complete removal.');
+  alert('ERROR: something went wrong. Failed to complete removal.');
 }
 
 // Main ----------------------------------------------------------------------
@@ -382,7 +407,8 @@ if (typeof Node === 'function' && Node.prototype) {
       if (doRemove) {
         removeHandler();
       }
-    } else if (msg.action === 'RELOAD') {
+    } else if (msg.action === 'STOP') {
+      localStorage.removeItem(searchMessageKey);
       reload();
     } else {
       console.log('Unknown action.');

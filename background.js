@@ -16,7 +16,7 @@
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         chrome.tabs.sendMessage(tabs[0].id, {
           tabId: tabs[0].id,
-          action: 'RELOAD',
+          action: 'STOP',
         });
       });
     } else {
