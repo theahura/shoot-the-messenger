@@ -41,6 +41,7 @@ TRIGGER_SEARCH_QUERY = '[role="presentation"][tabindex="-1"]';
 HIGHLIGHTED_TEXT_QUERY = 'span[role="gridcell"] div[role="button"]';
 NEXT_QUERY = '[aria-label="Next"]';
 
+// Consts and Params.
 const STATUS = {
   CONTINUE: 'continue',
   ERROR: 'error',
@@ -49,6 +50,8 @@ const STATUS = {
 
 const DELAY = 5;
 const RUNNER_COUNT = 25;
+const NUM_WORDS_IN_SEARCH = 6;
+const NUM_CHARS_PER_WORD_IN_SEARCH = 4;
 
 const currentURL =
   location.protocol + '//' + location.host + location.pathname;
@@ -114,7 +117,7 @@ async function prepareDOMForRemoval() {
       while (el.getAttribute('role') !== 'row') el = el.parentElement;
       el.remove();
     } catch (err) {
-      console.log(err);
+      console.log('Skipping row: could not find the row attribute.');
     }
   }
 
@@ -279,8 +282,14 @@ async function runSearch(searchMessage) {
     // Check the highlighted text.
     const highlighted = [...document.querySelectorAll(HIGHLIGHTED_TEXT_QUERY)];
     console.log('Found highlighted elements: ', highlighted);
-    if (highlighted[0].parentElement.parentElement.innerText === searchMessage)
-      return true;
+    try {
+      if (
+        highlighted[0].parentElement.parentElement.innerText === searchMessage
+      )
+        return true;
+    } catch (err) {
+      console.log('Could not get highlighted innerText. Skipping.');
+    }
 
     document.querySelectorAll(NEXT_QUERY)[0].click();
     await sleep(3000);
@@ -300,7 +309,8 @@ async function getSearchableMessage(prevMessage) {
   const filtered = availableMessages.filter((t) => {
     return (
       t !== prevMessage &&
-      t.split(/\s+/).filter((w) => w.length > 3).length > 4
+      t.split(/\s+/).filter((w) => w.length >= NUM_CHARS_PER_WORD_IN_SEARCH)
+        .length >= NUM_WORDS_IN_SEARCH
     );
   });
 
