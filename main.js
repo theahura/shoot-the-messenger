@@ -9,8 +9,7 @@ TOP_OF_CHAIN_QUERY =
   '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.tia6h79c.fe6kdd0r.mau55g9w.c8b282yb.iv3no6db.a5q79mjw.g1cxx5fr.lrazzd5p.oo9gr5id.oqcyycmt';
 
 // Remove Queries -------------------------------------------------------------
-ROW_QUERY =
-  '[data-testid="message-container"].j83agx80.buofh1pr.rl25f0pe.o6b9zlra';
+ROW_QUERY = '[data-testid="message-container"].rl25f0pe';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
@@ -206,7 +205,7 @@ async function unsendAllVisibleMessages(isLastRun) {
   await sleep(2000);
   if (topOfChainText.length > 1) {
     // We hit the top. Bubble this info back up.
-    console.log('Reached top of chain: ', topOfChain);
+    console.log('Reached top of chain: ', topOfChainText);
     return { status: STATUS.COMPLETE };
   } else if (scroller_ && scroller_.scrollTop !== 0) {
     // Scroll up. Wait for the loader.
