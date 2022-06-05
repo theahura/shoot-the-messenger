@@ -43,3 +43,10 @@ chrome.tabs.query(
     }
   },
 );
+
+document.getElementById('Delay').addEventListener('input', (e) => {
+  chrome.extension.sendMessage({
+    action: 'UPDATE_DELAY',
+    data: e.target.value,
+  });
+});

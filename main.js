@@ -1,7 +1,3 @@
-// Layout Queries -------------------------------------------------------------
-SCROLLER_QUERY =
-  '[role="main"] .buofh1pr.j83agx80.eg9m0zos.ni8dbmo4.cbu4d94t.gok29vw1';
-
 // The div at the very top of the message chain. This will also capture the
 // text of the chat itself, so when using this to see if we hit the top make
 // sure to check for TWO hits.
@@ -47,7 +43,7 @@ const STATUS = {
   COMPLETE: 'complete',
 };
 
-const DELAY = 5;
+let DELAY = 5;
 const RUNNER_COUNT = 25;
 const NUM_WORDS_IN_SEARCH = 6;
 const NUM_CHARS_PER_WORD_IN_SEARCH = 4;
@@ -64,6 +60,17 @@ function sleep(ms) {
 
 function reload() {
   window.location = window.location.pathname;
+}
+
+let scroller = null;
+function getScroller() {
+  if (scroller) return scroller;
+  let el = document.querySelector(ROW_QUERY);
+  while (el.scrollTop === 0) {
+    el = el.parentElement;
+  }
+  scroller = el;
+  return el;
 }
 
 function setNativeValue(element, value) {
@@ -101,8 +108,7 @@ async function prepareDOMForRemoval() {
 
   // Once we know what to remove, start the loading process for new messages
   // just in case we lose the scroller.
-  const scroller_ = document.querySelector(SCROLLER_QUERY);
-  scroller_.scrollTop = 0;
+  getScroller().scrollTop = 0;
 
   // We cant delete all of the elements because react will crash. Keep the
   // first one.
@@ -200,7 +206,7 @@ async function unsendAllVisibleMessages(isLastRun) {
   }
 
   // Now see if we need to scroll up.
-  const scroller_ = document.querySelector(SCROLLER_QUERY);
+  const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
   await sleep(2000);
   if (topOfChainText.length > 1) {
@@ -419,6 +425,9 @@ if (typeof Node === 'function' && Node.prototype) {
     } else if (msg.action === 'STOP') {
       localStorage.removeItem(searchMessageKey);
       reload();
+    } else if (msg.action === 'UPDATE_DELAY') {
+      console.log('Setting delay to', msg.data, 'seconds');
+      DELAY = msg.data;
     } else {
       console.log('Unknown action.');
     }

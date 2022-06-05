@@ -19,6 +19,10 @@
           action: 'STOP',
         });
       });
+    } else if (request.action === 'UPDATE_DELAY') {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { tabId: tabs[0].id, ...request });
+      });
     } else {
       console.log('Unknown action requested: ', request.action);
     }
