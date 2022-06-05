@@ -220,7 +220,7 @@ async function unsendAllVisibleMessages(isLastRun) {
     let loader = null;
     scroller_.scrollTop = 0;
 
-    for (const i = 0; i < 5; ++i) {
+    for (let i = 0; i < 5; ++i) {
       console.log('Waiting for loading messages to populate...', loader);
       await sleep(2000);
       loader = document.querySelector(LOADING_QUERY);
@@ -283,7 +283,7 @@ async function runSearch(searchMessage) {
   document.querySelectorAll(TRIGGER_SEARCH_QUERY)[0].click();
   await sleep(3000);
 
-  for (const i = 0; i < 20; ++i) {
+  for (let i = 0; i < 20; ++i) {
     // Check the highlighted text.
     const highlighted = [...document.querySelectorAll(HIGHLIGHTED_TEXT_QUERY)];
     console.log('Found highlighted elements: ', highlighted);
