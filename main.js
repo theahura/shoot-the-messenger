@@ -5,7 +5,7 @@ TOP_OF_CHAIN_QUERY =
   '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.tia6h79c.fe6kdd0r.mau55g9w.c8b282yb.iv3no6db.a5q79mjw.g1cxx5fr.lrazzd5p.oo9gr5id.oqcyycmt';
 
 // Remove Queries -------------------------------------------------------------
-ROW_QUERY = '[data-testid="message-container"].rl25f0pe';
+ROW_QUERY = '[data-testid="message-container"]:nth-child(2)';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
