@@ -5,7 +5,8 @@ TOP_OF_CHAIN_QUERY =
   '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.tia6h79c.fe6kdd0r.mau55g9w.c8b282yb.iv3no6db.a5q79mjw.g1cxx5fr.lrazzd5p.oo9gr5id.oqcyycmt';
 
 // Remove Queries -------------------------------------------------------------
-ROW_QUERY = '[data-testid="message-container"]:nth-child(2)';
+ROW_QUERY = '[data-testid="message-container"]';
+MY_ROW_QUERY = '[data-testid="message-container"].ov4vj3he';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
@@ -31,8 +32,9 @@ THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 
 // Search Queries -------------------------------------------------------------
 MESSAGE_CONTAINER_QUERY = '[data-testid="message-container"]';
-SEARCH_BAR_QUERY = '[aria-label="Search Messenger"]';
-TRIGGER_SEARCH_QUERY = '[role="presentation"][tabindex="-1"]';
+CONVERSATION_INFO_QUERY = '[aria-label="Conversation information"]';
+SEARCH_TOGGLE_QUERY = '[aria-label="Search"]';
+SEARCH_BAR_QUERY = '[placeholder="Search"]';
 HIGHLIGHTED_TEXT_QUERY = 'span[role="gridcell"] div[role="button"]';
 NEXT_QUERY = '[aria-label="Next"]';
 
@@ -44,7 +46,7 @@ const STATUS = {
 };
 
 let DELAY = 5;
-const RUNNER_COUNT = 25;
+const RUNNER_COUNT = 10;
 const NUM_WORDS_IN_SEARCH = 6;
 const NUM_CHARS_PER_WORD_IN_SEARCH = 4;
 
@@ -66,7 +68,7 @@ let scroller = null;
 function getScroller() {
   if (scroller) return scroller;
   let el = document.querySelector(ROW_QUERY);
-  while (el.scrollTop === 0) {
+  while (!('scrollTop' in el) || el.scrollTop === 0) {
     el = el.parentElement;
   }
   scroller = el;
@@ -95,12 +97,18 @@ function setNativeValue(element, value) {
   element.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+function submitReactFormFromInput(element) {
+  element.form.dispatchEvent(
+    new Event('submit', { cancelable: true, bubbles: true }),
+  );
+}
+
 // Removal functions ---------------------------------------------------------
 async function prepareDOMForRemoval() {
   // TODO: filter to only your messages.
 
   // Get all ... buttons that let you select 'more' for all messages you sent.
-  const elementsToUnsend = [...document.querySelectorAll(ROW_QUERY)];
+  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
 
   // Get the elements we know we cant unsend.
   const removeQuery = `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`;
@@ -266,21 +274,29 @@ async function runner(count) {
 // Search functions ---------------------------------------------------------
 
 async function runSearch(searchMessage) {
-  let searchBar = null;
-  for (let i = 0; i < 5; ++i) {
+  // Open the search bar.
+  const convInfoButton = document.querySelectorAll(CONVERSATION_INFO_QUERY)[0];
+  if (convInfoButton.attributes['aria-expanded'].value === 'false') {
+    convInfoButton.click();
+    await sleep(5000);
+  }
+
+  let searchBar = document.querySelectorAll(SEARCH_BAR_QUERY)[0];
+  if (!searchBar) {
+    document.querySelectorAll(SEARCH_TOGGLE_QUERY)[0].click();
+    await sleep(2000);
     searchBar = document.querySelectorAll(SEARCH_BAR_QUERY)[0];
-    if (!searchBar) await sleep(3000);
   }
 
   if (!searchBar) {
-    console.log('Could not load search bar after 5 sec. Failing.');
+    console.log('Could not load search bar. Failing.');
     return false;
   }
 
   console.log('Found searchBar', searchBar);
   setNativeValue(searchBar, searchMessage);
   await sleep(1000);
-  document.querySelectorAll(TRIGGER_SEARCH_QUERY)[0].click();
+  submitReactFormFromInput(searchBar);
   await sleep(3000);
 
   for (let i = 0; i < 20; ++i) {
@@ -334,6 +350,7 @@ async function getSearchableMessage(prevMessage) {
 
 // Handlers ------------------------------------------------------------------
 async function removeHandler() {
+  await sleep(5000); // give the page a bit to fully load.
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
     if (!(await runSearch(localStorage.getItem(searchMessageKey)))) {
@@ -414,7 +431,6 @@ if (typeof Node === 'function' && Node.prototype) {
     }
 
     console.log('Got action: ', msg.action);
-    const tabId = msg.tabId;
     if (msg.action === 'REMOVE') {
       const doRemove = confirm(
         'Removal will nuke your messages and will prevent you from seeing the messages of other people in this chat. We HIGHLY recommend backing up your messages first. Continue?',
