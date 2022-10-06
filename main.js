@@ -6,7 +6,7 @@ TOP_OF_CHAIN_QUERY =
 
 // Remove Queries -------------------------------------------------------------
 ROW_QUERY = '[data-testid="message-container"]';
-MY_ROW_QUERY = '[data-testid="message-container"].ov4vj3he';
+MY_ROW_QUERY = '[data-testid="message-container"].x15zctf7';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
