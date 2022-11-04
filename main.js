@@ -373,6 +373,7 @@ async function removeHandler() {
     localStorage.setItem(lastClearedKey, new Date().toString());
     console.log('Success!');
     alert('Successfully cleared all messages!');
+	return null;
   } else if (status === STATUS.CONTINUE) {
     console.log('Completed runner iteration but did not finish removal.');
     const lastSearched = localStorage.getItem(searchMessageKey);
