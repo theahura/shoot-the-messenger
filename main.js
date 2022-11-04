@@ -1,12 +1,19 @@
-// The div at the very top of the message chain. This will also capture the
-// text of the chat itself, so when using this to see if we hit the top make
-// sure to check for TWO hits.
-TOP_OF_CHAIN_QUERY =
-  '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.tia6h79c.fe6kdd0r.mau55g9w.c8b282yb.iv3no6db.a5q79mjw.g1cxx5fr.lrazzd5p.oo9gr5id.oqcyycmt';
+// The div at the very top of the message chain. This is the div holding the description
+// of the person your chatting with. Example as follows
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// User Image
+// User Name
+// You're friends on facebook
+// Lives in {city/state}
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=
+TOP_OF_CHAIN_QUERY = '.xsag5q8.xn6708d.x1ye3gou.x1cnzs8';
+
+// Main Message DIV
+MESSAGE_CONTAINER_QUERY = '.x63ui4o.x18i3tt1.x6ikm8r.x10wlt62';
 
 // Remove Queries -------------------------------------------------------------
-ROW_QUERY = '[data-testid="message-container"]';
-MY_ROW_QUERY = '[data-testid="message-container"].x15zctf7';
+MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077'; 
+PARTNER_CHAT_QUERY = '.x6prxxf.x1fc57z9.x1yc453h.x126k92a.xzsf02u'; // Partner chat text innerText, used for searching
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
@@ -31,7 +38,6 @@ LINK_QUERY =
 THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 
 // Search Queries -------------------------------------------------------------
-MESSAGE_CONTAINER_QUERY = '[data-testid="message-container"]';
 CONVERSATION_INFO_QUERY = '[aria-label="Conversation information"]';
 SEARCH_TOGGLE_QUERY = '[aria-label="Search"]';
 SEARCH_BAR_QUERY = '[placeholder="Search"]';
@@ -67,7 +73,7 @@ function reload() {
 let scroller = null;
 function getScroller() {
   if (scroller) return scroller;
-  let el = document.querySelector(ROW_QUERY);
+  let el = document.querySelector(MESSAGE_CONTAINER_QUERY);
   while (!('scrollTop' in el) || el.scrollTop === 0) {
     el = el.parentElement;
   }
@@ -217,7 +223,7 @@ async function unsendAllVisibleMessages(isLastRun) {
   const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
   await sleep(2000);
-  if (topOfChainText.length > 1) {
+  if (topOfChainText.length == 1) {
     // We hit the top. Bubble this info back up.
     console.log('Reached top of chain: ', topOfChainText);
     return { status: STATUS.COMPLETE };
@@ -322,7 +328,7 @@ async function runSearch(searchMessage) {
 async function getSearchableMessage(prevMessage) {
   // Grab the first 20 words of every message.
   const availableMessages = [
-    ...document.querySelectorAll(MESSAGE_CONTAINER_QUERY),
+    ...document.querySelectorAll(PARTNER_CHAT_QUERY),
   ].map((n) => n.innerText);
 
   // Find a message that wasnt the previous message with at least five words
@@ -353,6 +359,7 @@ async function removeHandler() {
   await sleep(5000); // give the page a bit to fully load.
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
+	  console.log('Attempting to run search with message : ', maybeSearchMessage);
     if (!(await runSearch(localStorage.getItem(searchMessageKey)))) {
       alert(`Unable to find message: ${maybeSearchMessage}. Failing.`);
       return null;
