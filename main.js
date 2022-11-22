@@ -331,13 +331,14 @@ async function getSearchableMessage(prevMessage) {
     ...document.querySelectorAll(PARTNER_CHAT_QUERY),
   ].map((n) => n.innerText);
 
-  // Find a message that wasnt the previous message with at least five words
-  // that have more than 4 characters.
+// Find a message that wasnt the previous message with at least five words
+// that have more than 4 characters. With no foreign characters allowed
+  var pattern = /^[a-z0-9\s.,?!]+$/i;
   const filtered = availableMessages.filter((t) => {
     return (
       t !== prevMessage &&
       t.split(/\s+/).filter((w) => w.length >= NUM_CHARS_PER_WORD_IN_SEARCH)
-        .length >= NUM_WORDS_IN_SEARCH
+        .length >= NUM_WORDS_IN_SEARCH && pattern.test(t)
     );
   });
 
