@@ -165,9 +165,9 @@ async function unsendAllVisibleMessages(isLastRun) {
 
   //reverse list so it steps through messages from bottom and not a seemingly random position.
   for (el of moreButtonsHolders.slice().reverse()) {
-	// Keep current task in view, as to not confuse users, thinking it's not working anymore.
-	el.scrollIntoView();
-	await sleep(100);
+    // Keep current task in view, as to not confuse users, thinking it's not working anymore.
+    el.scrollIntoView();
+    await sleep(100);
     // Trigger on hover.
     console.log('Triggering hover on: ', el);
     el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
