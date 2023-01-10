@@ -371,7 +371,7 @@ async function removeHandler() {
   await sleep(5000); // give the page a bit to fully load.
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
-	  console.log('Attempting to run search with message : ', maybeSearchMessage);
+    console.log('Attempting to run search with message : ', maybeSearchMessage);
     if (!(await runSearch(localStorage.getItem(searchMessageKey)))) {
       alert(`Unable to find message: ${maybeSearchMessage}. Failing.`);
       return null;
@@ -385,7 +385,7 @@ async function removeHandler() {
     localStorage.setItem(lastClearedKey, new Date().toString());
     console.log('Success!');
     alert('Successfully cleared all messages!');
-	return null;
+    return null;
   } else if (status === STATUS.CONTINUE) {
     console.log('Completed runner iteration but did not finish removal.');
     const lastSearched = localStorage.getItem(searchMessageKey);
