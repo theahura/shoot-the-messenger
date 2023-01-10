@@ -51,7 +51,7 @@ const STATUS = {
   COMPLETE: 'complete',
 };
 
-let DELAY = 5;
+let DELAY = 10;
 const RUNNER_COUNT = 10;
 const NUM_WORDS_IN_SEARCH = 6;
 const NUM_CHARS_PER_WORD_IN_SEARCH = 4;
@@ -62,8 +62,13 @@ const searchMessageKey = 'shoot-the-messenger-last-message' + currentURL;
 const lastClearedKey = 'shoot-the-messenger-last-cleared' + currentURL;
 
 // Helper functions ----------------------------------------------------------
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function getRandom(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+function sleep(ms) { 
+  let randomizedSleep = getRandom(ms, ms*1.33);
+  return new Promise((resolve) => setTimeout(resolve, randomizedSleep));
 }
 
 function reload() {
@@ -158,11 +163,15 @@ async function unsendAllVisibleMessages(isLastRun) {
   moreButtonsHolders.shift();
   console.log('Found hidden menu holders: ', moreButtonsHolders);
 
-  for (el of moreButtonsHolders) {
+  //reverse list so it steps through messages from bottom and not a seemingly random position.
+  for (el of moreButtonsHolders.slice().reverse()) {
+    // Keep current task in view, as to not confuse users, thinking it's not working anymore.
+    el.scrollIntoView();
+    await sleep(100);
     // Trigger on hover.
     console.log('Triggering hover on: ', el);
     el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-    await sleep(100);
+    await sleep(150);
 
     // Get the more button, unless weve clicked it too many times.
     const moreButton = document.querySelectorAll(MORE_BUTTONS_QUERY)[0];
@@ -185,7 +194,7 @@ async function unsendAllVisibleMessages(isLastRun) {
     );
 
     // Hit the remove button to get the popup.
-    await sleep(100);
+    await sleep(200);
     const removeButton = document.querySelectorAll(REMOVE_BUTTON_QUERY)[0];
     if (!removeButton) {
       console.log('No removeButton found! Skipping holder: ', el);
@@ -195,7 +204,7 @@ async function unsendAllVisibleMessages(isLastRun) {
     removeButton.click();
 
     // Hit unsend on the popup.
-    await sleep(500);
+    await sleep(1000);
     const unsendButton = document.querySelectorAll(
       REMOVE_CONFIRMATION_QUERY,
     )[0];
@@ -205,7 +214,7 @@ async function unsendAllVisibleMessages(isLastRun) {
     }
     console.log('Clicking unsend button: ', unsendButton);
     unsendButton.click();
-    await sleep(500);
+    await sleep(1800);
   }
   console.log('Removed all holders.');
 
@@ -222,8 +231,10 @@ async function unsendAllVisibleMessages(isLastRun) {
   // Now see if we need to scroll up.
   const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
+  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
+  console.log('topOfChain = ', topOfChainText.length, ' elementToUnsend = ', elementsToUnsend.length);
   await sleep(2000);
-  if (topOfChainText.length == 1) {
+  if (topOfChainText.length == 1 && elementsToUnsend.length <= 1) {
     // We hit the top. Bubble this info back up.
     console.log('Reached top of chain: ', topOfChainText);
     return { status: STATUS.COMPLETE };
@@ -360,7 +371,7 @@ async function removeHandler() {
   await sleep(5000); // give the page a bit to fully load.
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
-	  console.log('Attempting to run search with message : ', maybeSearchMessage);
+    console.log('Attempting to run search with message : ', maybeSearchMessage);
     if (!(await runSearch(localStorage.getItem(searchMessageKey)))) {
       alert(`Unable to find message: ${maybeSearchMessage}. Failing.`);
       return null;
@@ -374,7 +385,7 @@ async function removeHandler() {
     localStorage.setItem(lastClearedKey, new Date().toString());
     console.log('Success!');
     alert('Successfully cleared all messages!');
-	return null;
+    return null;
   } else if (status === STATUS.CONTINUE) {
     console.log('Completed runner iteration but did not finish removal.');
     const lastSearched = localStorage.getItem(searchMessageKey);
