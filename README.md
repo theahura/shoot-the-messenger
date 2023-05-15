@@ -6,7 +6,11 @@
 
 (I can't stand the stuff but she loves it)
 
-# Shoot the Messenger
+### Help! The extension is broken!
+
+Don't panic. Facebook changes the messenger UI every now and then, which inevitably breaks this tool. File a bug in the issues panel above. I generally am pretty swamped with other projects, so this tool may be broken for weeks at a time. If you need a really quick turn around, please sponsor some of my time [here](https://www.buymeacoffee.com/theahura/e/136718).
+
+# What is Shoot the Messenger?
 
 Shoot the Messenger is a Chrome extension that automatically unsends every message you have in a messenger chain. Unlike other extensions, which only hide the messages from the user's inbox, Shoot the Messenger will remove messages from the RECEIVER'S inbox as well. 
 
