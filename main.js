@@ -8,11 +8,8 @@
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=
 TOP_OF_CHAIN_QUERY = '.xsag5q8.xn6708d.x1ye3gou.x1cnzs8';
 
-// Main Message DIV
-MESSAGE_CONTAINER_QUERY = '.x63ui4o.x18i3tt1.x6ikm8r.x10wlt62';
-
 // Remove Queries -------------------------------------------------------------
-MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077'; 
+MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077:has(> span)'; // Also used for finding the scroller (we just go up to the first parent w/ scrollTop)
 PARTNER_CHAT_QUERY = '.x6prxxf.x1fc57z9.x1yc453h.x126k92a.xzsf02u'; // Partner chat text innerText, used for searching
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
@@ -61,13 +58,16 @@ const currentURL =
 const searchMessageKey = 'shoot-the-messenger-last-message' + currentURL;
 const lastClearedKey = 'shoot-the-messenger-last-cleared' + currentURL;
 
+let scrollerCache = null;
+
 // Helper functions ----------------------------------------------------------
-function getRandom(min, max) { // min and max included 
-  return Math.floor(Math.random() * (max - min + 1) + min)
+function getRandom(min, max) {
+  // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-function sleep(ms) { 
-  let randomizedSleep = getRandom(ms, ms*1.33);
+function sleep(ms) {
+  let randomizedSleep = getRandom(ms, ms * 1.33);
   return new Promise((resolve) => setTimeout(resolve, randomizedSleep));
 }
 
@@ -75,14 +75,16 @@ function reload() {
   window.location = window.location.pathname;
 }
 
-let scroller = null;
 function getScroller() {
-  if (scroller) return scroller;
-  let el = document.querySelector(MESSAGE_CONTAINER_QUERY);
+  if (scrollerCache) return scrollerCache;
+  const query = `${MY_ROW_QUERY}, ${PARTNER_CHAT_QUERY}`;
+  let el = document.querySelector(query);
   while (!('scrollTop' in el) || el.scrollTop === 0) {
+    console.log('What is el?', el);
     el = el.parentElement;
   }
-  scroller = el;
+
+  scrollerCache = el;
   return el;
 }
 
@@ -232,7 +234,12 @@ async function unsendAllVisibleMessages(isLastRun) {
   const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
   const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
-  console.log('topOfChain = ', topOfChainText.length, ' elementToUnsend = ', elementsToUnsend.length);
+  console.log(
+    'topOfChain = ',
+    topOfChainText.length,
+    ' elementToUnsend = ',
+    elementsToUnsend.length,
+  );
   await sleep(2000);
   if (topOfChainText.length == 1 && elementsToUnsend.length <= 1) {
     // We hit the top. Bubble this info back up.
@@ -342,14 +349,15 @@ async function getSearchableMessage(prevMessage) {
     ...document.querySelectorAll(PARTNER_CHAT_QUERY),
   ].map((n) => n.innerText);
 
-// Find a message that wasnt the previous message with at least five words
-// that have more than 4 characters. With no foreign characters allowed
+  // Find a message that wasnt the previous message with at least five words
+  // that have more than 4 characters. With no foreign characters allowed
   var pattern = /^[a-z0-9\s.,?!]+$/i;
   const filtered = availableMessages.filter((t) => {
     return (
       t !== prevMessage &&
       t.split(/\s+/).filter((w) => w.length >= NUM_CHARS_PER_WORD_IN_SEARCH)
-        .length >= NUM_WORDS_IN_SEARCH && pattern.test(t)
+        .length >= NUM_WORDS_IN_SEARCH &&
+      pattern.test(t)
     );
   });
 
@@ -371,7 +379,10 @@ async function removeHandler() {
   await sleep(5000); // give the page a bit to fully load.
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
-    console.log('Attempting to run search with message : ', maybeSearchMessage);
+    console.log(
+      'Attempting to run search with message : ',
+      maybeSearchMessage,
+    );
     if (!(await runSearch(localStorage.getItem(searchMessageKey)))) {
       alert(`Unable to find message: ${maybeSearchMessage}. Failing.`);
       return null;
