@@ -1,12 +1,12 @@
 ![Shoot the Messenger Icon](/icon.png)
 
-### Buy my GF a coffee
-
 <a href="https://www.buymeacoffee.com/theahura" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
-(I can't stand the stuff but she loves it)
+### Help! The extension is broken!
 
-# Shoot the Messenger
+Don't panic. Facebook changes the messenger UI every now and then, which inevitably breaks this tool. File a bug in the issues panel above. I generally am pretty swamped with other projects, so this tool may be broken for weeks at a time. If you need a really quick turn around, please sponsor some of my time [here](https://www.buymeacoffee.com/theahura/e/136718).
+
+# What is Shoot the Messenger?
 
 Shoot the Messenger is a Chrome extension that automatically unsends every message you have in a messenger chain. Unlike other extensions, which only hide the messages from the user's inbox, Shoot the Messenger will remove messages from the RECEIVER'S inbox as well. 
 
