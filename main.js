@@ -11,6 +11,7 @@ TOP_OF_CHAIN_QUERY = '.xsag5q8.xn6708d.x1ye3gou.x1cnzs8';
 // Remove Queries -------------------------------------------------------------
 MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077:has(> span)'; // Also used for finding the scroller (we just go up to the first parent w/ scrollTop)
 PARTNER_CHAT_QUERY = '.x6prxxf.x1fc57z9.x1yc453h.x126k92a.xzsf02u'; // Partner chat text innerText, used for searching
+UNSENT_MESSAGE_QUERY = '[aria-label="You unsent a message"]'; // In case a user has none of their own messages on screen and only unsent messages, this serves to pick up the scroll parent.
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
@@ -77,7 +78,7 @@ function reload() {
 
 function getScroller() {
   if (scrollerCache) return scrollerCache;
-  const query = `${MY_ROW_QUERY}, ${PARTNER_CHAT_QUERY}`;
+  const query = `${MY_ROW_QUERY}, ${PARTNER_CHAT_QUERY}, ${UNSENT_MESSAGE_QUERY}`;
   let el = document.querySelector(query);
   while (!('scrollTop' in el) || el.scrollTop === 0) {
     console.log('What is el?', el);
