@@ -1,11 +1,11 @@
 document.getElementById('RemoveMessages').addEventListener('click', () => {
-  chrome.extension.sendMessage({
+  chrome.runtime.sendMessage({
     action: 'REMOVE',
   });
 });
 
 document.getElementById('Stop').addEventListener('click', () => {
-  chrome.extension.sendMessage({
+  chrome.runtime.sendMessage({
     action: 'STOP',
   });
 });
@@ -45,7 +45,7 @@ chrome.tabs.query(
 );
 
 document.getElementById('Delay').addEventListener('input', (e) => {
-  chrome.extension.sendMessage({
+  chrome.runtime.sendMessage({
     action: 'UPDATE_DELAY',
     data: e.target.value,
   });

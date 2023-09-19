@@ -25,6 +25,8 @@ OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
 
 COULDNT_REMOVE_QUERY = '._3quh._30yy._2t_._5ixy.layerCancel';
 REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"],[aria-label="Remove"]';
+CANCEL_CONFIRMATION_QUERY =
+  '[aria-label="Who do you want to remove this message for?"] :not([aria-disabled="true"])[aria-label="Cancel"]';
 
 // The loading animation.
 LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
@@ -50,9 +52,10 @@ const STATUS = {
 };
 
 let DELAY = 10;
-const RUNNER_COUNT = 10;
+const RUNNER_COUNT = 2;
 const NUM_WORDS_IN_SEARCH = 6;
-const NUM_CHARS_PER_WORD_IN_SEARCH = 4;
+const MIN_SEARCH_LENGTH = 20;
+const DEBUG_MODE = true; // When set, does not actually remove messages.
 
 const currentURL =
   location.protocol + '//' + location.host + location.pathname;
@@ -60,6 +63,7 @@ const searchMessageKey = 'shoot-the-messenger-last-message' + currentURL;
 const lastClearedKey = 'shoot-the-messenger-last-cleared' + currentURL;
 
 let scrollerCache = null;
+const clickCountPerElement = new Map();
 
 // Helper functions ----------------------------------------------------------
 function getRandom(min, max) {
@@ -78,11 +82,22 @@ function reload() {
 
 function getScroller() {
   if (scrollerCache) return scrollerCache;
-  const query = `${MY_ROW_QUERY}, ${PARTNER_CHAT_QUERY}, ${UNSENT_MESSAGE_QUERY}`;
-  let el = document.querySelector(query);
-  while (!('scrollTop' in el) || el.scrollTop === 0) {
-    console.log('What is el?', el);
-    el = el.parentElement;
+
+  let el;
+  try {
+    const query = `${MY_ROW_QUERY}, ${PARTNER_CHAT_QUERY}, ${UNSENT_MESSAGE_QUERY}`;
+    el = document.querySelector(query);
+    while (!('scrollTop' in el) || el.scrollTop === 0) {
+      console.log('Traversing tree to find scroller...', el);
+      el = el.parentElement;
+    }
+  } catch (e) {
+    alert(
+      'Could not find scroller. This normally happens because you do not ' +
+        'have enough messages to scroll through. Failing.',
+    );
+    console.log('Could not find scroller; failing.');
+    throw new Error('Could not find scroller.');
   }
 
   scrollerCache = el;
@@ -111,10 +126,21 @@ function setNativeValue(element, value) {
   element.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function submitReactFormFromInput(element) {
-  element.form.dispatchEvent(
-    new Event('submit', { cancelable: true, bubbles: true }),
-  );
+async function submitSearch() {
+  // We need to do this in a separate script in the main context. See:
+  // https://stackoverflow.com/a/9517879/3269537
+  // This is because we need access to specific react properties, which in turn
+  // are only available on the main context.
+  //
+  // Unfortunately that also means this function has to be highly specific to
+  // the search behavior.
+  const s = document.createElement('script');
+  s.src = chrome.runtime.getURL('./submitSearch.js');
+  s.dataset.params = JSON.stringify({ searchBarQuery: SEARCH_BAR_QUERY });
+  s.onload = function () {
+    this.remove();
+  };
+  (document.head || document.documentElement).appendChild(s);
 }
 
 // Removal functions ---------------------------------------------------------
@@ -127,6 +153,15 @@ async function prepareDOMForRemoval() {
   // Get the elements we know we cant unsend.
   const removeQuery = `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`;
   const elementsToRemove = [...document.querySelectorAll(removeQuery)];
+
+  // Add the elements from clickCountPerElement where the count is greater than
+  // 3 to elementsToRemove.
+  for (let [el, count] of clickCountPerElement) {
+    if (count > 3) {
+      console.log('Unable to unsend element: ', el);
+      elementsToRemove.push(el);
+    }
+  }
 
   // Once we know what to remove, start the loading process for new messages
   // just in case we lose the scroller.
@@ -166,35 +201,32 @@ async function unsendAllVisibleMessages(isLastRun) {
   moreButtonsHolders.shift();
   console.log('Found hidden menu holders: ', moreButtonsHolders);
 
-  //reverse list so it steps through messages from bottom and not a seemingly random position.
+  // Reverse list so it steps through messages from bottom and not a seemingly
+  // random position.
   for (el of moreButtonsHolders.slice().reverse()) {
-    // Keep current task in view, as to not confuse users, thinking it's not working anymore.
+    // Keep current task in view, as to not confuse users, thinking it's not
+    // working anymore.
     el.scrollIntoView();
     await sleep(100);
+
     // Trigger on hover.
     console.log('Triggering hover on: ', el);
     el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     await sleep(150);
 
-    // Get the more button, unless weve clicked it too many times.
+    // Get the more button.
     const moreButton = document.querySelectorAll(MORE_BUTTONS_QUERY)[0];
     if (!moreButton) {
       console.log('No moreButton found! Skipping holder: ', el);
       continue;
     }
-    if (moreButton.getAttribute('data-clickcount') > 5) {
-      console.log('Clicked moreButton too many times, skipping holder: ', el);
-      continue;
-    }
     console.log('Clicking more button: ', moreButton);
     moreButton.click();
 
-    // Update the click count on the button.
-    const prevClickCount = moreButton.getAttribute('data-clickcount');
-    moreButton.setAttribute(
-      'data-clickcount',
-      prevClickCount ? prevClickCount + 1 : 1,
-    );
+    // Update the click count for the button. This is used to skip elements
+    // that refuse to be unsent (see: prepareDOMForRemoval -- we remove these
+    // DOM elements there).
+    clickCountPerElement.set(el, (clickCountPerElement.get(el) ?? 0) + 1);
 
     // Hit the remove button to get the popup.
     await sleep(200);
@@ -206,13 +238,24 @@ async function unsendAllVisibleMessages(isLastRun) {
     console.log('Clicking remove button: ', removeButton);
     removeButton.click();
 
-    // Hit unsend on the popup.
+    // Hit unsend on the popup. If we are in debug mode, just log the popup.
     await sleep(1000);
     const unsendButton = document.querySelectorAll(
       REMOVE_CONFIRMATION_QUERY,
     )[0];
-    if (!unsendButton) {
+    const cancelButton = document.querySelectorAll(
+      CANCEL_CONFIRMATION_QUERY,
+    )[0];
+    if (DEBUG_MODE) {
+      console.log(
+        'Skipping unsend because we are in debug mode.',
+        unsendButton,
+      );
+      cancelButton.click();
+      continue;
+    } else if (!unsendButton) {
       console.log('No unsendButton found! Skipping holder: ', el);
+      cancelButton.click();
       continue;
     }
     console.log('Clicking unsend button: ', unsendButton);
@@ -284,7 +327,7 @@ async function runner(count) {
     console.log('Running count:', i);
     const sleepTime = await unsendAllVisibleMessages(i === count - 1);
     if (sleepTime.status === STATUS.CONTINUE) {
-      console.log('Sleeping to avoid rate limits: ', sleepTime.data);
+      console.log('Sleeping to avoid rate limits: ', sleepTime.data / 1000);
       await sleep(sleepTime.data);
     } else if (sleepTime.status === STATUS.COMPLETE) {
       return STATUS.COMPLETE;
@@ -301,6 +344,7 @@ async function runner(count) {
 async function runSearch(searchMessage) {
   // Open the search bar.
   const convInfoButton = document.querySelectorAll(CONVERSATION_INFO_QUERY)[0];
+
   if (convInfoButton.attributes['aria-expanded'].value === 'false') {
     convInfoButton.click();
     await sleep(5000);
@@ -320,8 +364,7 @@ async function runSearch(searchMessage) {
 
   console.log('Found searchBar', searchBar);
   setNativeValue(searchBar, searchMessage);
-  await sleep(1000);
-  submitReactFormFromInput(searchBar);
+  await submitSearch();
   await sleep(3000);
 
   for (let i = 0; i < 20; ++i) {
@@ -329,10 +372,12 @@ async function runSearch(searchMessage) {
     const highlighted = [...document.querySelectorAll(HIGHLIGHTED_TEXT_QUERY)];
     console.log('Found highlighted elements: ', highlighted);
     try {
-      if (
-        highlighted[0].parentElement.parentElement.innerText === searchMessage
-      )
-        return true;
+      let el = highlighted[0];
+      while (true) {
+        if (!el) break;
+        if (el.innerText === searchMessage) return true;
+        el = el.parentElement;
+      }
     } catch (err) {
       console.log('Could not get highlighted innerText. Skipping.');
     }
@@ -345,20 +390,20 @@ async function runSearch(searchMessage) {
 }
 
 async function getSearchableMessage(prevMessage) {
-  // Grab the first 20 words of every message.
   const availableMessages = [
     ...document.querySelectorAll(PARTNER_CHAT_QUERY),
   ].map((n) => n.innerText);
 
-  // Find a message that wasnt the previous message with at least five words
-  // that have more than 4 characters. With no foreign characters allowed
+  // Find a message that wasnt the previous message, with at least five words,
+  // with no foreign characters allowed, where the total message length is
+  // at least 20ch.
   var pattern = /^[a-z0-9\s.,?!]+$/i;
   const filtered = availableMessages.filter((t) => {
     return (
       t !== prevMessage &&
-      t.split(/\s+/).filter((w) => w.length >= NUM_CHARS_PER_WORD_IN_SEARCH)
-        .length >= NUM_WORDS_IN_SEARCH &&
-      pattern.test(t)
+      t.split(/\s+/).length >= NUM_WORDS_IN_SEARCH &&
+      pattern.test(t) &&
+      t.length >= MIN_SEARCH_LENGTH
     );
   });
 
@@ -375,9 +420,48 @@ async function getSearchableMessage(prevMessage) {
   return null;
 }
 
+function hijackLog() {
+  // Add a log to the bottom left of the screen where users can see what the
+  // system is thinking about.
+  console.log('Adding log to screen');
+  const log = document.createElement('div');
+  log.id = 'log';
+  log.style.position = 'fixed';
+  log.style.bottom = '0';
+  log.style.left = '0';
+  log.style.backgroundColor = 'white';
+  log.style.padding = '10px';
+  log.style.zIndex = '10000';
+  log.style.maxWidth = '200px';
+  log.style.maxHeight = '500px';
+  log.style.overflow = 'scroll';
+  log.style.border = '1px solid black';
+  log.style.fontSize = '12px';
+  log.style.fontFamily = 'monospace';
+  log.style.color = 'black';
+  document.body.appendChild(log);
+
+  // Hijack the console.log function to also append to our new log element.
+  const oldLog = console.log;
+  console.log = function () {
+    oldLog.apply(console, arguments);
+    log.innerText += '\n' + Array.from(arguments).join(' ');
+    log.scrollTop = log.scrollHeight;
+  };
+  console.log('Successfully added log to screen');
+  console.log(
+    'To see more complete logs, hit f12 or open the developer console.',
+  );
+  return log;
+}
+
 // Handlers ------------------------------------------------------------------
 async function removeHandler() {
-  await sleep(5000); // give the page a bit to fully load.
+  hijackLog();
+
+  console.log('Sleeping to allow the page to load fully...');
+  await sleep(10000); // give the page a bit to fully load.
+
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
     console.log(

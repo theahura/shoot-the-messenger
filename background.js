@@ -27,6 +27,4 @@
       console.log('Unknown action requested: ', request.action);
     }
   });
-
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {});
 })();
