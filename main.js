@@ -55,7 +55,7 @@ let DELAY = 10;
 const RUNNER_COUNT = 2;
 const NUM_WORDS_IN_SEARCH = 6;
 const MIN_SEARCH_LENGTH = 20;
-const DEBUG_MODE = true; // When set, does not actually remove messages.
+const DEBUG_MODE = false; // When set, does not actually remove messages.
 
 const currentURL =
   location.protocol + '//' + location.host + location.pathname;
