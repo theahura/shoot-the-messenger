@@ -52,7 +52,7 @@ const STATUS = {
 };
 
 let DELAY = 10;
-const RUNNER_COUNT = 2;
+const RUNNER_COUNT = 10;
 const NUM_WORDS_IN_SEARCH = 6;
 const MIN_SEARCH_LENGTH = 20;
 const DEBUG_MODE = false; // When set, does not actually remove messages.
