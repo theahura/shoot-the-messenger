@@ -369,6 +369,8 @@ async function runSearch(searchMessage) {
 
   console.log('Found searchBar', searchBar);
   setNativeValue(searchBar, searchMessage);
+  searchMessage = searchMessage.trim().replaceAll(" +", " ")
+  console.log('searchMessage: ' + searchMessage);
   await submitSearch();
   await sleep(3000);
 
@@ -377,7 +379,8 @@ async function runSearch(searchMessage) {
   try {
     for (let i = 0; i <= matches.length; ++i) {
       match = matches[i].parentElement.parentElement.parentElement
-      if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage.trim().replaceAll(" +", " ")) {
+      console.log('match [' + i + ']': ' + match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText);
+      if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage) {
         match.click(); 
         return true;
       }
