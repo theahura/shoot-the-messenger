@@ -379,8 +379,9 @@ async function runSearch(searchMessage) {
   try {
     for (let i = 0; i <= matches.length; ++i) {
       match = matches[i].parentElement.parentElement.parentElement
-      console.log('match [' + i + ']': ' + match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText);
+      console.log('possible match [' + i + ']: ' + match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText);
       if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage) {
+        console.log('exact match found. clicking.');
         match.click(); 
         return true;
       }
