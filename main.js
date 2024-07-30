@@ -10,8 +10,14 @@ TOP_OF_CHAIN_QUERY = '.xsag5q8.xn6708d.x1ye3gou.x1cnzs8';
 
 // Remove Queries -------------------------------------------------------------
 MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077:has(> span)'; // Also used for finding the scroller (we just go up to the first parent w/ scrollTop)
-PARTNER_CHAT_QUERY = '.x6prxxf.x1fc57z9.x1yc453h.x126k92a.xzsf02u'; // Partner chat text innerText, used for searching
-UNSENT_MESSAGE_QUERY = '[aria-label="You unsent a message"]'; // In case a user has none of their own messages on screen and only unsent messages, this serves to pick up the scroll parent.
+
+// Partner chat text innerText, used for searching
+PARTNER_CHAT_QUERY =
+  '.html-div.xe8uvvx.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x1gslohp.x11i5rnm.x12nagc.x1mh8g0r.x1yc453h.x126k92a.x18lvrbx';
+
+// In case a user has none of their own messages on screen and only unsent messages, this serves to pick up the scroll parent
+UNSENT_MESSAGE_QUERY =
+  '.xevjqck.x14xiqua.x10nbalq.x1fum7jp.xeuugli.x1fj9vlw.x13faqbe.x1vvkbs.xlh3980.xvmahel.x12ovt74.x1kfpmh.x3u9vk4.x1lliihq.x1s928wv.xhkezso.x1gmr53x.x1cpjm7i.x1fgarty.x1943h6x.xtc0289.xdmd9no';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[aria-label="More"]';
