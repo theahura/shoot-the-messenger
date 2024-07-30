@@ -46,7 +46,7 @@ THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 // Search Queries -------------------------------------------------------------
 CONVERSATION_INFO_QUERY = '[aria-label="Conversation information"]';
 SEARCH_TOGGLE_QUERY = '[aria-label="Search"]';
-SEARCH_BAR_QUERY = '[placeholder="Search"]';
+SEARCH_BAR_QUERY = '[placeholder="Search in conversation"]';
 HIGHLIGHTED_TEXT_QUERY = 'span[role="gridcell"] div[role="button"]';
 NEXT_QUERY = '[aria-label="Next"]';
 
