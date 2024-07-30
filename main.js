@@ -377,7 +377,7 @@ async function runSearch(searchMessage) {
   try {
     for (let i = 0; i <= matches.length; ++i) {
       match = matches[i].parentElement.parentElement.parentElement
-      if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage) {
+      if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage.trim().replaceAll(" +", " ")) {
         match.click(); 
         return true;
       }
