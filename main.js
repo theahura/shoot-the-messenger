@@ -46,9 +46,8 @@ THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 // Search Queries -------------------------------------------------------------
 CONVERSATION_INFO_QUERY = '[aria-label="Conversation information"]';
 SEARCH_TOGGLE_QUERY = '[aria-label="Search"]';
-SEARCH_BAR_QUERY = '[placeholder="Search"]';
-HIGHLIGHTED_TEXT_QUERY = 'span[role="gridcell"] div[role="button"]';
-NEXT_QUERY = '[aria-label="Next"]';
+SEARCH_BAR_QUERY = '[placeholder="Search in conversation"]';
+MATCHES_QUERY = 'div[role="button"] img';
 
 // Consts and Params.
 const STATUS = {
@@ -353,7 +352,7 @@ async function runSearch(searchMessage) {
 
   if (convInfoButton.attributes['aria-expanded'].value === 'false') {
     convInfoButton.click();
-    await sleep(5000);
+    await sleep(3000);
   }
 
   let searchBar = document.querySelectorAll(SEARCH_BAR_QUERY)[0];
@@ -370,27 +369,29 @@ async function runSearch(searchMessage) {
 
   console.log('Found searchBar', searchBar);
   setNativeValue(searchBar, searchMessage);
+  searchMessage = searchMessage.trim().replaceAll(" +", " ")
+  console.log('searchMessage: ' + searchMessage);
   await submitSearch();
   await sleep(3000);
 
-  for (let i = 0; i < 20; ++i) {
-    // Check the highlighted text.
-    const highlighted = [...document.querySelectorAll(HIGHLIGHTED_TEXT_QUERY)];
-    console.log('Found highlighted elements: ', highlighted);
-    try {
-      let el = highlighted[0];
-      while (true) {
-        if (!el) break;
-        if (el.innerText === searchMessage) return true;
-        el = el.parentElement;
+  const matches = [...document.querySelectorAll(MATCHES_QUERY)]
+  console.log('Found ' + matches.length + ' matches: ', matches);
+  try {
+    for (let i = 0; i <= matches.length; ++i) {
+      match = matches[i].parentElement.parentElement.parentElement
+      console.log('possible match [' + i + ']: ' + match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText);
+      if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage) {
+        console.log('exact match found. clicking.');
+        match.click(); 
+        return true;
       }
-    } catch (err) {
-      console.log('Could not get highlighted innerText. Skipping.');
     }
-
-    document.querySelectorAll(NEXT_QUERY)[0].click();
-    await sleep(3000);
   }
+  catch (err) {
+    console.log('No search results. Skipping.');
+  }
+
+  await sleep(3000);
 
   return false;
 }
