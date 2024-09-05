@@ -57,3 +57,10 @@ document.getElementById('SearchText').addEventListener('input', (e) => {
     data: e.target.value,
   });
 });
+
+document.getElementById('Mode').addEventListener('input', (e) => {
+  chrome.runtime.sendMessage({
+    action: 'UPDATE_MODE',
+    data: e.target.value,
+  });
+});
