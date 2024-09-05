@@ -13,14 +13,14 @@ MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077:has(> span)'; // Also
 
 // Partner chat text innerText, used for searching
 PARTNER_CHAT_QUERY =
-  '.html-div.xe8uvvx.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x1gslohp.x11i5rnm.x12nagc.x1mh8g0r.x1yc453h.x126k92a.x18lvrbx';
+  '.html-div.x1k4qllp.x6ikm8r.x10wlt62.xerhiuh.x1pn3fxy.x12xxe5f.x1szedp3.x1n2onr6.x1vjfegm.x1mzt3pk.x13faqbe.x1xr0vuk';
 
 // In case a user has none of their own messages on screen and only unsent messages, this serves to pick up the scroll parent
 UNSENT_MESSAGE_QUERY =
   '.xevjqck.x14xiqua.x10nbalq.x1fum7jp.xeuugli.x1fj9vlw.x13faqbe.x1vvkbs.xlh3980.xvmahel.x12ovt74.x1kfpmh.x3u9vk4.x1lliihq.x1s928wv.xhkezso.x1gmr53x.x1cpjm7i.x1fgarty.x1943h6x.xtc0289.xdmd9no';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
-MORE_BUTTONS_QUERY = '[aria-label="More"]';
+MORE_BUTTONS_QUERY = '[role="row"] [aria-hidden="false"] [aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
 REMOVE_BUTTON_QUERY =
@@ -32,22 +32,16 @@ OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
 COULDNT_REMOVE_QUERY = '._3quh._30yy._2t_._5ixy.layerCancel';
 REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"],[aria-label="Remove"]';
 CANCEL_CONFIRMATION_QUERY =
-  '[aria-label="Who do you want to remove this message for?"] :not([aria-disabled="true"])[aria-label="Cancel"]';
+  '[aria-label="Who do you want to unsend this message for?"] :not([aria-disabled="true"])[aria-label="Cancel"]';
 
 // The loading animation.
 LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
-
-// Things we cannot delete for unknown reasons.
-STICKER_QUERY = '[aria-label$=sticker]';
-LINK_QUERY =
-  '.d2edcug0.hpfvmrgz.qv66sw1b.c1et5uql.b0tq1wua.a8c37x1j.keod5gw0.nxhoafnm.aigsh9s9.d9wwppkn.fe6kdd0r.mau55g9w.c8b282yb.hrzyx87i.jq4qci2q.a3bd9o3v.lrazzd5p.oo9gr5id.hzawbc8m';
-THUMBS_UP = '[aria-label="Thumbs up sticker"]';
 
 // Search Queries -------------------------------------------------------------
 CONVERSATION_INFO_QUERY = '[aria-label="Conversation information"]';
 SEARCH_TOGGLE_QUERY = '[aria-label="Search"]';
 SEARCH_BAR_QUERY = '[placeholder="Search in conversation"]';
-MATCHES_QUERY = 'div[role="button"] img';
+MATCHES_QUERY = '[class="x6s0dn4 x78zum5"]';
 
 // Consts and Params.
 const STATUS = {
@@ -56,7 +50,7 @@ const STATUS = {
   COMPLETE: 'complete',
 };
 
-let DELAY = 10;
+let DELAY = 5;
 const RUNNER_COUNT = 10;
 const NUM_WORDS_IN_SEARCH = 6;
 const MIN_SEARCH_LENGTH = 20;
@@ -150,14 +144,11 @@ async function submitSearch() {
 
 // Removal functions ---------------------------------------------------------
 async function prepareDOMForRemoval() {
-  // TODO: filter to only your messages.
-
-  // Get all ... buttons that let you select 'more' for all messages you sent.
-  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
-
   // Get the elements we know we cant unsend.
-  const removeQuery = `${STICKER_QUERY}, ${LINK_QUERY}, ${THUMBS_UP}`;
-  const elementsToRemove = [...document.querySelectorAll(removeQuery)];
+  const unsentMessageElements = Array.from(
+    document.querySelectorAll('div'),
+  ).filter((el) => el.textContent === 'You unsent a message');
+  const elementsToRemove = [...unsentMessageElements];
 
   // Add the elements from clickCountPerElement where the count is greater than
   // 3 to elementsToRemove.
@@ -171,6 +162,7 @@ async function prepareDOMForRemoval() {
   // Once we know what to remove, start the loading process for new messages
   // just in case we lose the scroller.
   getScroller().scrollTop = 0;
+  await sleep(1000);
 
   // We cant delete all of the elements because react will crash. Keep the
   // first one.
@@ -187,6 +179,10 @@ async function prepareDOMForRemoval() {
       console.log('Skipping row: could not find the row attribute.');
     }
   }
+
+  // Get all ... buttons that let you select 'more' for all messages you sent.
+  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
+  console.log('Got elements to unsend: ', elementsToUnsend);
 
   // Filter the elementsToUnsend list by what is still in the DOM.
   return elementsToUnsend.filter((el) => {
@@ -234,12 +230,13 @@ async function unsendAllVisibleMessages(isLastRun) {
     clickCountPerElement.set(el, (clickCountPerElement.get(el) ?? 0) + 1);
 
     // Hit the remove button to get the popup.
-    await sleep(200);
+    await sleep(500);
     const removeButton = document.querySelectorAll(REMOVE_BUTTON_QUERY)[0];
-    if (!removeButton) {
+    if (!removeButton || removeButton.textContent !== 'Unsend') {
       console.log('No removeButton found! Skipping holder: ', el);
       continue;
     }
+
     console.log('Clicking remove button: ', removeButton);
     removeButton.click();
 
@@ -369,25 +366,27 @@ async function runSearch(searchMessage) {
 
   console.log('Found searchBar', searchBar);
   setNativeValue(searchBar, searchMessage);
-  searchMessage = searchMessage.trim().replaceAll(" +", " ")
+  searchMessage = searchMessage.trim().replaceAll(' +', ' ');
   console.log('searchMessage: ' + searchMessage);
   await submitSearch();
   await sleep(3000);
 
-  const matches = [...document.querySelectorAll(MATCHES_QUERY)]
+  const matches = [...document.querySelectorAll(MATCHES_QUERY)].filter(
+    (el) => el.innerText,
+  );
   console.log('Found ' + matches.length + ' matches: ', matches);
   try {
-    for (let i = 0; i <= matches.length; ++i) {
-      match = matches[i].parentElement.parentElement.parentElement
-      console.log('possible match [' + i + ']: ' + match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText);
-      if (match.lastChild.lastChild.lastChild.lastChild.lastChild.firstChild.innerText === searchMessage) {
-        console.log('exact match found. clicking.');
-        match.click(); 
+    for (match of matches) {
+      const text = match.innerText;
+      console.log('Possible match: ', text);
+      if (text.includes(searchMessage)) {
+        console.log('Exact match found. clicking.');
+        match.click();
         return true;
       }
     }
-  }
-  catch (err) {
+  } catch (err) {
+    console.log('Got err', err);
     console.log('No search results. Skipping.');
   }
 
@@ -567,12 +566,14 @@ if (typeof Node === 'function' && Node.prototype) {
     } else if (msg.action === 'UPDATE_DELAY') {
       console.log('Setting delay to', msg.data, 'seconds');
       DELAY = msg.data;
+    } else if (msg.action === 'UPDATE_SEARCH_TEXT') {
+      console.log('Setting search text to', msg.data);
+      localStorage.setItem(searchMessageKey, msg.data);
     } else {
       console.log('Unknown action.');
     }
   });
 
-  // TODO: Check to see if we need to kick off a removal request.
   if (localStorage.getItem(searchMessageKey)) {
     removeHandler();
   }

@@ -50,3 +50,10 @@ document.getElementById('Delay').addEventListener('input', (e) => {
     data: e.target.value,
   });
 });
+
+document.getElementById('SearchText').addEventListener('input', (e) => {
+  chrome.runtime.sendMessage({
+    action: 'UPDATE_SEARCH_TEXT',
+    data: e.target.value,
+  });
+});
