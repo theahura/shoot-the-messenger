@@ -57,3 +57,26 @@ document.getElementById('SearchText').addEventListener('input', (e) => {
     data: e.target.value,
   });
 });
+
+document.getElementById('Mode').addEventListener('input', (e) => {
+  chrome.runtime.sendMessage({
+    action: 'UPDATE_MODE',
+    data: e.target.value,
+  });
+});
+
+// Send over defaults to clear whatever the prior state is from local storage.
+chrome.runtime.sendMessage({
+  action: 'UPDATE_DELAY',
+  data: document.getElementById('Delay').value,
+});
+
+chrome.runtime.sendMessage({
+  action: 'UPDATE_SEARCH_TEXT',
+  data: document.getElementById('SearchText').value,
+});
+
+chrome.runtime.sendMessage({
+  action: 'UPDATE_MODE',
+  data: document.getElementById('Mode').value,
+});

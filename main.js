@@ -11,7 +11,7 @@ TOP_OF_CHAIN_QUERY = '.xsag5q8.xn6708d.x1ye3gou.x1cnzs8';
 // Remove Queries -------------------------------------------------------------
 MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077:has(> span)'; // Also used for finding the scroller (we just go up to the first parent w/ scrollTop)
 
-// Partner chat text innerText, used for searching
+// Partner chat text innerText.
 PARTNER_CHAT_QUERY =
   '.html-div.x1k4qllp.x6ikm8r.x10wlt62.xerhiuh.x1pn3fxy.x12xxe5f.x1szedp3.x1n2onr6.x1vjfegm.x1mzt3pk.x13faqbe.x1xr0vuk';
 
@@ -59,7 +59,11 @@ const DEBUG_MODE = false; // When set, does not actually remove messages.
 const currentURL =
   location.protocol + '//' + location.host + location.pathname;
 const searchMessageKey = 'shoot-the-messenger-last-message' + currentURL;
+const modeKey = 'shoot-the-messenger-mode' + currentURL;
+const continueRunningDeleteAllKey =
+  'shoot-the-messenger-delete-all-continue' + currentURL;
 const lastClearedKey = 'shoot-the-messenger-last-cleared' + currentURL;
+const delayKey = 'shoot-the-messenger-delay' + currentURL;
 
 let scrollerCache = null;
 const clickCountPerElement = new Map();
@@ -144,11 +148,7 @@ async function submitSearch() {
 
 // Removal functions ---------------------------------------------------------
 async function prepareDOMForRemoval() {
-  // Get the elements we know we cant unsend.
-  const unsentMessageElements = Array.from(
-    document.querySelectorAll('div'),
-  ).filter((el) => el.textContent === 'You unsent a message');
-  const elementsToRemove = [...unsentMessageElements];
+  const elementsToRemove = [];
 
   // Add the elements from clickCountPerElement where the count is greater than
   // 3 to elementsToRemove.
@@ -179,7 +179,22 @@ async function prepareDOMForRemoval() {
       console.log('Skipping row: could not find the row attribute.');
     }
   }
+}
 
+async function getAllMessages() {
+  // Get all ... buttons that let you select 'more' for all messages you sent.
+  const elementsToUnsend = [
+    ...document.querySelectorAll(MY_ROW_QUERY),
+    ...document.querySelectorAll(PARTNER_CHAT_QUERY),
+  ];
+  console.log('Got elements to unsend: ', elementsToUnsend);
+  debugger;
+
+  // Filter the elementsToUnsend list by what is still in the DOM.
+  return elementsToUnsend;
+}
+
+async function getMyMessages() {
   // Get all ... buttons that let you select 'more' for all messages you sent.
   const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
   console.log('Got elements to unsend: ', elementsToUnsend);
@@ -195,7 +210,140 @@ async function prepareDOMForRemoval() {
 async function unsendAllVisibleMessages(isLastRun) {
   // Prepare the DOM. Get the elements we can remove. Load the next set. Hide
   // the rest.
-  const moreButtonsHolders = await prepareDOMForRemoval();
+  prepareDOMForRemoval();
+  const moreButtonsHolders = await getAllMessages();
+
+  // Drop the first element in the list, because react needs something to load
+  // more messages onto.
+  moreButtonsHolders.shift();
+  console.log('Found hidden menu holders: ', moreButtonsHolders);
+
+  // Reverse list so it steps through messages from bottom and not a seemingly
+  // random position.
+  for (el of moreButtonsHolders.slice().reverse()) {
+    // Keep current task in view, as to not confuse users, thinking it's not
+    // working anymore.
+    el.scrollIntoView();
+    await sleep(100);
+
+    // Trigger on hover.
+    console.log('Triggering hover on: ', el);
+    el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    await sleep(150);
+
+    // Get the more button.
+    const moreButton = document.querySelectorAll(MORE_BUTTONS_QUERY)[0];
+    if (!moreButton) {
+      console.log('No moreButton found! Skipping holder: ', el);
+      continue;
+    }
+    console.log('Clicking more button: ', moreButton);
+    moreButton.click();
+
+    // Update the click count for the button. This is used to skip elements
+    // that refuse to be unsent (see: prepareDOMForRemoval -- we remove these
+    // DOM elements there).
+    clickCountPerElement.set(el, (clickCountPerElement.get(el) ?? 0) + 1);
+
+    // Hit the remove button to get the popup.
+    await sleep(500);
+    const removeButton = document.querySelectorAll(REMOVE_BUTTON_QUERY)[0];
+    if (!removeButton) {
+      console.log('No removeButton found! Skipping holder: ', el);
+      continue;
+    }
+
+    console.log('Clicking remove button: ', removeButton);
+    removeButton.click();
+
+    // Hit unsend on the popup. If we are in debug mode, just log the popup.
+    await sleep(1000);
+    const unsendButton = document.querySelectorAll(
+      REMOVE_CONFIRMATION_QUERY,
+    )[0];
+    const cancelButton = document.querySelectorAll(
+      CANCEL_CONFIRMATION_QUERY,
+    )[0];
+    if (DEBUG_MODE) {
+      console.log(
+        'Skipping unsend because we are in debug mode.',
+        unsendButton,
+      );
+      cancelButton.click();
+      continue;
+    } else if (!unsendButton) {
+      console.log('No unsendButton found! Skipping holder: ', el);
+      cancelButton.click();
+      continue;
+    }
+    console.log('Clicking unsend button: ', unsendButton);
+    unsendButton.click();
+    await sleep(1800);
+  }
+  console.log('Removed all holders.');
+
+  // If this is the last run before the runner cycle finishes, dont keep
+  // scrolling up.
+  if (isLastRun) {
+    if (moreButtonsHolders.length === 0) {
+      return { status: STATUS.CONTINUE, data: 100 };
+    } else {
+      return { status: STATUS.CONTINUE, data: DELAY * 1000 };
+    }
+  }
+
+  // Now see if we need to scroll up.
+  const scroller_ = getScroller();
+  const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
+  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
+  console.log(
+    'topOfChain = ',
+    topOfChainText.length,
+    ' elementToUnsend = ',
+    elementsToUnsend.length,
+  );
+  await sleep(2000);
+  if (topOfChainText.length == 1 && elementsToUnsend.length <= 1) {
+    // We hit the top. Bubble this info back up.
+    console.log('Reached top of chain: ', topOfChainText);
+    return { status: STATUS.COMPLETE };
+  } else if (scroller_ && scroller_.scrollTop !== 0) {
+    // Scroll up. Wait for the loader.
+    // Were done loading when the loading animation is gone, or when the loop
+    // waits 5 times (10s).
+    let loader = null;
+    scroller_.scrollTop = 0;
+
+    for (let i = 0; i < 5; ++i) {
+      console.log('Waiting for loading messages to populate...', loader);
+      await sleep(2000);
+      loader = document.querySelector(LOADING_QUERY);
+      if (!loader) break;
+    }
+  } else {
+    // Something is wrong. We dont have load more OR scrolling, but we havent
+    // hit the top either.
+    console.log(
+      'No scroller or load buttons, but we didnt hit the top. Failing.',
+    );
+    return { status: STATUS.ERROR };
+  }
+
+  // And then run the whole thing again after 500ms for loading if we didnt
+  // have any removals (to zoom up quickly), or 5s if we did have removals to
+  // avoid any rate limiting.
+  if (moreButtonsHolders.length === 0) {
+    return { status: STATUS.CONTINUE, data: 100 };
+  } else {
+    return { status: STATUS.CONTINUE, data: DELAY * 1000 };
+  }
+}
+
+async function unsendMyVisibleMessages(isLastRun) {
+  // Prepare the DOM. Get the elements we can remove. Load the next set. Hide
+  // the rest.
+  prepareDOMForRemoval();
+  const moreButtonsHolders = await getMyMessages();
 
   // Drop the first element in the list, because react needs something to load
   // more messages onto.
@@ -323,8 +471,26 @@ async function unsendAllVisibleMessages(isLastRun) {
   }
 }
 
-async function runner(count) {
+async function deleteMineRunner(count) {
   console.log('Starting runner removal for N iterations: ', count);
+  for (let i = 0; i < count; ++i) {
+    console.log('Running count:', i);
+    const sleepTime = await unsendMyVisibleMessages(i === count - 1);
+    if (sleepTime.status === STATUS.CONTINUE) {
+      console.log('Sleeping to avoid rate limits: ', sleepTime.data / 1000);
+      await sleep(sleepTime.data);
+    } else if (sleepTime.status === STATUS.COMPLETE) {
+      return STATUS.COMPLETE;
+    } else {
+      return STATUS.ERROR;
+    }
+  }
+  console.log('Completed run.');
+  return STATUS.CONTINUE;
+}
+
+async function deleteAllRunner(count) {
+  console.log('Starting delete all runner removal for N iterations: ', count);
   for (let i = 0; i < count; ++i) {
     console.log('Running count:', i);
     const sleepTime = await unsendAllVisibleMessages(i === count - 1);
@@ -462,12 +628,8 @@ function hijackLog() {
 }
 
 // Handlers ------------------------------------------------------------------
-async function removeHandler() {
-  hijackLog();
 
-  console.log('Sleeping to allow the page to load fully...');
-  await sleep(10000); // give the page a bit to fully load.
-
+async function removeMyMessagesHandler() {
   const maybeSearchMessage = localStorage.getItem(searchMessageKey);
   if (maybeSearchMessage) {
     console.log(
@@ -480,7 +642,7 @@ async function removeHandler() {
     }
   }
 
-  const status = await runner(RUNNER_COUNT);
+  const status = await deleteMineRunner(RUNNER_COUNT);
 
   if (status === STATUS.COMPLETE) {
     localStorage.removeItem(searchMessageKey);
@@ -503,6 +665,42 @@ async function removeHandler() {
 
   console.log('Failed to complete removal.');
   alert('ERROR: something went wrong. Failed to complete removal.');
+}
+
+async function removeAllMessagesHandler() {
+  const status = await deleteAllRunner(RUNNER_COUNT);
+
+  if (status === STATUS.COMPLETE) {
+    localStorage.removeItem(continueRunningDeleteAllKey);
+    localStorage.setItem(lastClearedKey, new Date().toString());
+    console.log('Success!');
+    alert('Successfully cleared all messages!');
+    return null;
+  } else if (status === STATUS.CONTINUE) {
+    console.log('Completed runner iteration but did not finish removal.');
+    localStorage.setItem(continueRunningDeleteAllKey, true);
+    return reload();
+  }
+
+  console.log('Failed to complete removal.');
+  alert('ERROR: something went wrong. Failed to complete removal.');
+}
+
+async function removeHandler(mode) {
+  hijackLog();
+
+  DELAY = localStorage.getItem(delayKey) ?? DELAY;
+
+  console.log('Running removal in mode: ', mode);
+
+  console.log('Sleeping to allow the page to load fully...');
+  await sleep(10000); // give the page a bit to fully load.
+
+  if (mode === 'deleteAll') {
+    await removeAllMessagesHandler(RUNNER_COUNT);
+  }
+
+  await removeMyMessagesHandler(RUNNER_COUNT);
 }
 
 // Main ----------------------------------------------------------------------
@@ -558,23 +756,36 @@ if (typeof Node === 'function' && Node.prototype) {
         'Removal will nuke your messages and will prevent you from seeing the messages of other people in this chat. We HIGHLY recommend backing up your messages first. Continue?',
       );
       if (doRemove) {
-        removeHandler();
+        const mode = localStorage.getItem(modeKey);
+        removeHandler(mode);
       }
     } else if (msg.action === 'STOP') {
       localStorage.removeItem(searchMessageKey);
       reload();
     } else if (msg.action === 'UPDATE_DELAY') {
       console.log('Setting delay to', msg.data, 'seconds');
-      DELAY = msg.data;
+      localStorage.setItem(delayKey, msg.data);
     } else if (msg.action === 'UPDATE_SEARCH_TEXT') {
       console.log('Setting search text to', msg.data);
       localStorage.setItem(searchMessageKey, msg.data);
+    } else if (msg.action === 'UPDATE_MODE') {
+      console.log('Setting mode to', msg.data);
+      localStorage.setItem(modeKey, msg.data);
     } else {
       console.log('Unknown action.');
     }
   });
 
+  // Logic for restarting removal process after a page refresh, if necessary.
+  const mode = localStorage.getItem(modeKey);
   if (localStorage.getItem(searchMessageKey)) {
-    removeHandler();
+    removeHandler(mode);
+  }
+
+  if (
+    mode === 'deleteAll' &&
+    localStorage.getItem(continueRunningDeleteAllKey)
+  ) {
+    removeHandler(mode);
   }
 })();
