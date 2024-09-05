@@ -16,7 +16,10 @@ Open a messenger thread, hit 'Remove Messages', and go get a coffee. While you'r
   
 After using Shoot the Messenger, you WILL NOT be able to access your messages (unless FB releases them for some reason). I HIGHLY recommend backing up your messenger data before using this extension.
 
-Updates will be posted to twitter here: [@theahura_](https://twitter.com/theahura_)
+There are a few other settings for things like:
+- choosing which message to start deleting from
+- setting a 'delay' time to avoid rate limits
+- which mode to use (by default, StM will delete only your messages, leaving behind a trail of 'You unsent a message'; you can use 'Delete All' mode to delete _all_ messages, though note that you are only removing other people's messages from your inbox)
 
 # Installing
 
