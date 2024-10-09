@@ -51,13 +51,6 @@ document.getElementById('Delay').addEventListener('input', (e) => {
   });
 });
 
-document.getElementById('SearchText').addEventListener('input', (e) => {
-  chrome.runtime.sendMessage({
-    action: 'UPDATE_SEARCH_TEXT',
-    data: e.target.value,
-  });
-});
-
 document.getElementById('Mode').addEventListener('input', (e) => {
   chrome.runtime.sendMessage({
     action: 'UPDATE_MODE',
@@ -69,14 +62,4 @@ document.getElementById('Mode').addEventListener('input', (e) => {
 chrome.runtime.sendMessage({
   action: 'UPDATE_DELAY',
   data: document.getElementById('Delay').value,
-});
-
-chrome.runtime.sendMessage({
-  action: 'UPDATE_SEARCH_TEXT',
-  data: document.getElementById('SearchText').value,
-});
-
-chrome.runtime.sendMessage({
-  action: 'UPDATE_MODE',
-  data: document.getElementById('Mode').value,
 });
