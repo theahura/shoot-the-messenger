@@ -17,7 +17,7 @@ PARTNER_CHAT_QUERY =
 
 // In case a user has none of their own messages on screen and only unsent messages, this serves to pick up the scroll parent
 UNSENT_MESSAGE_QUERY =
-  '.xevjqck.x14xiqua.x10nbalq.x1fum7jp.xeuugli.x1fj9vlw.x13faqbe.x1vvkbs.xlh3980.xvmahel.x12ovt74.x1kfpmh.x3u9vk4.x1lliihq.x1s928wv.xhkezso.x1gmr53x.x1cpjm7i.x1fgarty.x1943h6x.xtc0289.xdmd9no';
+  '[class="html-div x11i5rnm x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x1k4tb9n x12nagc x1gslohp x1ks1olk xyk4ms5"]';
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[role="row"] [aria-hidden="false"] [aria-label="More"]';
@@ -186,6 +186,7 @@ async function getAllMessages() {
   const elementsToUnsend = [
     ...document.querySelectorAll(MY_ROW_QUERY),
     ...document.querySelectorAll(PARTNER_CHAT_QUERY),
+    ...document.querySelectorAll(UNSENT_MESSAGE_QUERY),
   ];
   console.log('Got elements to unsend: ', elementsToUnsend);
   debugger;
@@ -196,7 +197,10 @@ async function getAllMessages() {
 
 async function getMyMessages() {
   // Get all ... buttons that let you select 'more' for all messages you sent.
-  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
+  const elementsToUnsend = [
+    ...document.querySelectorAll(MY_ROW_QUERY),
+	...document.querySelectorAll(UNSENT_MESSAGE_QUERY),
+  ];
   console.log('Got elements to unsend: ', elementsToUnsend);
 
   // Filter the elementsToUnsend list by what is still in the DOM.
@@ -295,7 +299,10 @@ async function unsendAllVisibleMessages(isLastRun) {
   // Now see if we need to scroll up.
   const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
-  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
+  const elementsToUnsend = [
+    ...document.querySelectorAll(MY_ROW_QUERY),
+	...document.querySelectorAll(UNSENT_MESSAGE_QUERY),
+  ];
   console.log(
     'topOfChain = ',
     topOfChainText.length,
@@ -427,7 +434,10 @@ async function unsendMyVisibleMessages(isLastRun) {
   // Now see if we need to scroll up.
   const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
-  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
+  const elementsToUnsend = [
+    ...document.querySelectorAll(MY_ROW_QUERY),
+	...document.querySelectorAll(UNSENT_MESSAGE_QUERY),
+  ];
   console.log(
     'topOfChain = ',
     topOfChainText.length,
@@ -563,7 +573,9 @@ async function runSearch(searchMessage) {
 
 async function getSearchableMessage(prevMessage) {
   const availableMessages = [
+    ...document.querySelectorAll(MY_ROW_QUERY),
     ...document.querySelectorAll(PARTNER_CHAT_QUERY),
+    ...document.querySelectorAll(UNSENT_MESSAGE_QUERY),
   ].map((n) => n.innerText);
 
   // Find a message that wasnt the previous message, with at least five words,
