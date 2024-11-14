@@ -28,7 +28,6 @@ REMOVE_BUTTON_QUERY =
 // The button used to close the 'message removed' post confirmation.
 OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
 
-COULDNT_REMOVE_QUERY = '._3quh._30yy._2t_._5ixy.layerCancel';
 REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"],[aria-label="Remove"]';
 CANCEL_CONFIRMATION_QUERY =
   '[aria-label="Who do you want to unsend this message for?"] :not([aria-disabled="true"])[aria-label="Cancel"]';
