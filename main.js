@@ -282,7 +282,7 @@ async function deleteAllRunner(count) {
   console.log('Starting delete all runner removal for N iterations: ', count);
   for (let i = 0; i < count; ++i) {
     console.log('Running count:', i);
-    const sleepTime = await unsendAllVisibleMessages(i === count - 1);
+    const sleepTime = await unsendAllVisibleMessages();
     if (sleepTime.status === STATUS.CONTINUE) {
       console.log('Sleeping to avoid rate limits: ', sleepTime.data / 1000);
       await sleep(sleepTime.data);
