@@ -24,10 +24,6 @@
   },
 
   "permissions": ["activeTab", "storage"],
-  "host_permissions": [
-    "http://*.messenger.com/*",
-    "https://*.messenger.com/*"
-  ],
   "icons": { "128": "icon.png" },
 
   "content_security_policy": {
