@@ -298,7 +298,7 @@ function hijackLog() {
 
 async function removeHandler() {
   hijackLog();
-  DELAY = localStorage.getItem(delayKey) ?? DELAY;
+  DELAY = localStorage.getItem(delayKey) || DELAY;
   console.log('Sleeping to allow the page to load fully...');
   await sleep(10000); // give the page a bit to fully load.
 
