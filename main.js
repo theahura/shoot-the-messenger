@@ -220,7 +220,6 @@ async function unsendAllVisibleMessages() {
   // Now see if we need to scroll up.
   const scroller_ = getScroller();
   const topOfChainText = document.querySelectorAll(TOP_OF_CHAIN_QUERY);
-  const elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
   await sleep(2000);
   if (!scroller_ || scroller_.scrollTop === 0) {
     console.log('Reached top of chain: ', topOfChainText);
