@@ -79,8 +79,7 @@ function getScroller() {
 
   let el;
   try {
-    const query = `${MY_ROW_QUERY}, ${PARTNER_CHAT_QUERY}`;
-    el = document.querySelector(query) ?? getUnsentMessages()[0];
+    el = document.querySelector(ALL_CHAT_QUERY);
     while (!('scrollTop' in el) || el.scrollTop === 0) {
       console.log('Traversing tree to find scroller...', el);
       el = el.parentElement;
