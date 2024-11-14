@@ -379,7 +379,7 @@ if (typeof Node === 'function' && Node.prototype) {
       localStorage.removeItem(continueKey);
       reload();
     } else if (msg.action === 'UPDATE_DELAY') {
-      console.log('Setting delay to', msg.data, 'seconds');
+      console.log('Setting delay to', msg.data || DELAY, 'seconds');
       localStorage.setItem(delayKey, msg.data);
     } else {
       console.log('Unknown action.');
