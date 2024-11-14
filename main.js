@@ -9,28 +9,32 @@
 TOP_OF_CHAIN_QUERY = '.xsag5q8.xn6708d.x1ye3gou.x1cnzs8';
 
 // Remove Queries -------------------------------------------------------------
-MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077:has(> span)'; // Also used for finding the scroller (we just go up to the first parent w/ scrollTop)
+MY_ROW_QUERY = '.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.xuk3077'; // Also used for finding the scroller (we just go up to the first parent w/ scrollTop)
 
 // Partner chat text innerText.
-PARTNER_CHAT_QUERY =
-  '.html-div.x1k4qllp.x6ikm8r.x10wlt62.xerhiuh.x1pn3fxy.x12xxe5f.x1szedp3.x1n2onr6.x1vjfegm.x1mzt3pk.x13faqbe.x1xr0vuk';
+PARTNER_CHAT_QUERY = '.x1cy8zhl.x78zum5.xdt5ytf.x193iq5w.x1n2onr6.x1kxipp6';
+
+// Selects all sent chats (both Partner's and User's chat messages)
+CHATS_QUERY = `.html-div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x78zum5.xh8yej3:has(${MY_ROW_QUERY},${PARTNER_CHAT_QUERY})`;
 
 // In case a user has none of their own messages on screen and only unsent messages, this serves to pick up the scroll parent
-UNSENT_MESSAGE_INNER_TEXT = 'You unsent a message';
+UNSENT_MESSAGE_QUERY = `.html-div.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x1h91t0o.xkh2ocl.x78zum5.xdt5ytf.x13a6bvl.x193iq5w.x1c4vz4f.x1eb86dx:has(.html-div.x11i5rnm.x1mh8g0r.xexx8yu.x4uap5.x18d9i69.xkhd6sd.x1k4tb9n.x12nagc.x1gslohp.x1ks1olk.xyk4ms5)`;
+
+// Selects all chats (Unsent messages, Partner's and User's)
+ALL_CHAT_QUERY = `${CHATS_QUERY},${UNSENT_MESSAGE_QUERY}`;
 
 // The sideways ellipses used to open the 'remove' menu. Visible on hover.
 MORE_BUTTONS_QUERY = '[role="row"] [aria-hidden="false"] [aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
-REMOVE_BUTTON_QUERY =
-  '[aria-label="Remove message"],[aria-label="Remove Message"]';
+REMOVE_BUTTON_QUERY = '[aria-label="Remove message"],[aria-label="Remove Message"]';
 
 // The button used to close the 'message removed' post confirmation.
 OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
 
 REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"],[aria-label="Remove"]';
-CANCEL_CONFIRMATION_QUERY =
-  '[aria-label="Who do you want to unsend this message for?"] :not([aria-disabled="true"])[aria-label="Cancel"]';
+CANCEL_BUTTON_QUERY = `:not([aria-disabled="true"])[aria-label="Cancel"][role="button"]`
+CANCEL_CONFIRMATION_QUERY = `[aria-label="Who do you want to unsend this message for?"] ${CANCEL_BUTTON_QUERY},[aria-label="Remove for you"] ${CANCEL_BUTTON_QUERY}`;
 
 // The loading animation.
 LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
@@ -70,12 +74,6 @@ function reload() {
   window.location = window.location.pathname;
 }
 
-function getUnsentMessages() {
-  return Array.from(document.querySelectorAll('div')).filter(
-    (el) => el.innerText === UNSENT_MESSAGE_INNER_TEXT,
-  );
-}
-
 function getScroller() {
   if (scrollerCache) return scrollerCache;
 
@@ -101,6 +99,50 @@ function getScroller() {
 }
 
 // Removal functions ---------------------------------------------------------
+// Takes a chat message and removes any reaction made by the user
+// Returns true if the user didn't react to the chat or the reaction was removed successfully, false otherwise
+async function removeReactionFromMessage(chat_msg) {
+  // Get the reactions from chat message
+  const reactionButton = chat_msg.parentElement.querySelector(`[aria-label*="see who reacted to this"][role="button"]`);
+  if (!reactionButton) {
+    console.log('Chat message has no reaction');
+    return true;
+  }
+  console.log('Clicking on reaction button: ', reactionButton);
+  reactionButton.click();
+  await sleep(500);
+
+  // Check if the reaction window has opened
+  const windowPopup = document.querySelector(`.x1yr2tfi`);
+  // Check if the title tag within the popup window is of "Message reactions"
+  if (windowPopup?.querySelector('.x1lkfr7t').innerText !== 'Message reactions') {
+    console.log('Reaction window couldn't open');
+    return false;
+  }
+
+  // Find if the user reacted to the message
+  // NOTE: I'm not sure if a user can react to a message more than once, if not, then this array will always only have one element at most
+  Array.from(windowPopup.querySelectorAll(`div.xu06os2:nth-child(2) > span`))
+       .filer((el) => el.innerText === 'Click to remove')
+       .forEach(async (el) => {
+         if (DEBUG_MODE) {
+           console.log('Skipping removal of reaction we are in debug mode. ', el);
+           return; // counts as a 'continue' keyword
+         }
+
+         console.log('Removing reaction from message: ', el);
+         el.click();
+         await sleep(150);
+       });
+
+  // Close reaction window
+  console.log('Closing reaction window');
+  windowPopup.querySelector(`[aria-label="Close"][role="button"]`).click();
+  await sleep(1000);
+  return true;
+}
+
+
 async function prepareDOMForRemoval() {
   const elementsToRemove = [];
 
@@ -137,11 +179,7 @@ async function prepareDOMForRemoval() {
 
 async function getAllMessages() {
   // Get all ... buttons that let you select 'more' for all messages you sent.
-  const elementsToUnsend = [
-    ...document.querySelectorAll(MY_ROW_QUERY),
-    ...document.querySelectorAll(PARTNER_CHAT_QUERY),
-    ...getUnsentMessages(),
-  ];
+  const elementsToUnsend = [...document.querySelectorAll(ALL_CHAT_QUERY)];
   console.log('Got elements to unsend: ', elementsToUnsend);
   return elementsToUnsend;
 }
@@ -161,13 +199,19 @@ async function unsendAllVisibleMessages() {
     el.scrollIntoView();
     await sleep(100);
 
+    // Remove reactions from chat message if possible
+    if (!(await removeReactionFromMessage(el))) {
+      console.log('Could not successfully remove the reactions! Skipping holder: ', el);
+      continue;
+    }
+
     // Trigger on hover.
     console.log('Triggering hover on: ', el);
     el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     await sleep(150);
 
     // Get the more button.
-    const moreButton = document.querySelectorAll(MORE_BUTTONS_QUERY)[0];
+    const moreButton = el.parentElement.parentElement.querySelector(MORE_BUTTONS_QUERY);
     if (!moreButton) {
       console.log('No moreButton found! Skipping holder: ', el);
       continue;
@@ -182,7 +226,7 @@ async function unsendAllVisibleMessages() {
 
     // Hit the remove button to get the popup.
     await sleep(500);
-    const removeButton = document.querySelectorAll(REMOVE_BUTTON_QUERY)[0];
+    const removeButton = document.querySelector(REMOVE_BUTTON_QUERY);
     if (!removeButton) {
       console.log('No removeButton found! Skipping holder: ', el);
       continue;
@@ -193,17 +237,10 @@ async function unsendAllVisibleMessages() {
 
     // Hit unsend on the popup. If we are in debug mode, just log the popup.
     await sleep(1000);
-    const unsendButton = document.querySelectorAll(
-      REMOVE_CONFIRMATION_QUERY,
-    )[0];
-    const cancelButton = document.querySelectorAll(
-      CANCEL_CONFIRMATION_QUERY,
-    )[0];
+    const unsendButton = document.querySelector(REMOVE_CONFIRMATION_QUERY);
+    const cancelButton = document.querySelector(CANCEL_CONFIRMATION_QUERY);
     if (DEBUG_MODE) {
-      console.log(
-        'Skipping unsend because we are in debug mode.',
-        unsendButton,
-      );
+      console.log('Skipping unsend because we are in debug mode.', unsendButton);
       cancelButton.click();
     } else if (!unsendButton) {
       console.log('No unsendButton found! Skipping holder: ', el);
@@ -211,8 +248,8 @@ async function unsendAllVisibleMessages() {
     } else {
       console.log('Clicking unsend button: ', unsendButton);
       unsendButton.click();
-      await sleep(1800);
     }
+    await sleep(1800);
   }
   console.log('Removed all holders.');
 
