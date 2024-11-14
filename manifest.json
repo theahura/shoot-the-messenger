@@ -13,13 +13,6 @@
     }
   ],
 
-  "web_accessible_resources": [
-    {
-      "resources": ["submitSearch.js"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-
   "background": {
     "service_worker": "background.js"
   },
