@@ -115,14 +115,14 @@ async function removeReactionFromMessage(chat_msg) {
   const windowPopup = document.querySelector(`.x1yr2tfi`);
   // Check if the title tag within the popup window is of "Message reactions"
   if (windowPopup?.querySelector('.x1lkfr7t').innerText !== 'Message reactions') {
-    console.log('Reaction window couldn't open');
+    console.log("Reaction window couldn't open");
     return false;
   }
 
   // Find if the user reacted to the message
   // NOTE: I'm not sure if a user can react to a message more than once, if not, then this array will always only have one element at most
   Array.from(windowPopup.querySelectorAll(`div.xu06os2:nth-child(2) > span`))
-       .filer((el) => el.innerText === 'Click to remove')
+       .filter((el) => el.innerText === 'Click to remove')
        .forEach(async (el) => {
          if (DEBUG_MODE) {
            console.log('Skipping removal of reaction we are in debug mode. ', el);
