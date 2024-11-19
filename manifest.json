@@ -3,7 +3,7 @@
 
   "name": "Shoot the Messenger",
   "description": "This extension sequentially unsends all messenges in a messenger chain.",
-  "version": "7.0.0",
+  "version": "7.1.0",
 
   "content_scripts": [
     {
@@ -13,15 +13,9 @@
     }
   ],
 
-  "web_accessible_resources": [
-    {
-      "resources": ["submitSearch.js"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
 
   "action": {
@@ -30,10 +24,6 @@
   },
 
   "permissions": ["activeTab", "storage"],
-  "host_permissions": [
-    "http://*.messenger.com/*",
-    "https://*.messenger.com/*"
-  ],
   "icons": { "128": "icon.png" },
 
   "content_security_policy": {

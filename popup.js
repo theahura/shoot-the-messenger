@@ -51,13 +51,6 @@ document.getElementById('Delay').addEventListener('input', (e) => {
   });
 });
 
-document.getElementById('Mode').addEventListener('input', (e) => {
-  chrome.runtime.sendMessage({
-    action: 'UPDATE_MODE',
-    data: e.target.value,
-  });
-});
-
 // Send over defaults to clear whatever the prior state is from local storage.
 chrome.runtime.sendMessage({
   action: 'UPDATE_DELAY',
