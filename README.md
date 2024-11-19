@@ -23,6 +23,8 @@ There are a few other settings for things like:
 
 # Installing
 
+## Google Chrome
+
 Download on the chrome webstore [here](https://chrome.google.com/webstore/detail/shoot-the-messenger/lkhmjelfhkidbekjkghmbacoaolbcmep?hl=en). 
 
 ### Downloading nightly.
@@ -34,6 +36,20 @@ If you want the latest version, you can git clone the repo and install it as an 
 3) Hit load unpacked, and then select the directory where you downloaded the code from this repo. 
 4) If you did everything right, the shoot the messenger logo should appear in your extension list.
 5) Go to messenger.com and click on a thread you want to delete. Click the extension, hit remove, and hopefully things happen.
+
+## Firefox
+
+**NOTE**: This extension is mainly developed with Google Chrome in mind. Which means that any updates to source *might* break in Firefox. So import this extension to Firefox at your discretion.
+
+### Downloading nightly
+
+**NOTE:** This will load the extension **temporarily**, meaning, that the extension will be removed when Firefox is closed and you will have to load it again.
+
+1) Clone or download the code in this repository somewhere on your computer
+2) Follow the instructions [here](https://extensionworkshop.com/documentation/publish/package-your-extension/) to package the extension into a `.zip` file.
+3) Open Firefox and go to `about:debugging#/runtime/this-firefox` (using the address/URL bar) page.
+4) Click the `Load Temporary Add-on...` button.
+5) Select the `.zip` packaged extension created in step 2.
 
 # How to Use
 1) Go to messenger.com
