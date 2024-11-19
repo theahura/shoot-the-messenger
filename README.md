@@ -19,7 +19,6 @@ After using Shoot the Messenger, you WILL NOT be able to access your messages (u
 There are a few other settings for things like:
 - choosing which message to start deleting from
 - setting a 'delay' time to avoid rate limits
-- which mode to use (by default, StM will delete only your messages, leaving behind a trail of 'You unsent a message'; you can use 'Delete All' mode to delete _all_ messages, though note that you are only removing other people's messages from your inbox)
 
 # Installing
 
