@@ -23,7 +23,7 @@ MORE_BUTTONS_QUERY = '[role="row"] [aria-hidden="false"] [aria-label="More"]';
 
 // The button used to open the remove confirmation dialog.
 REMOVE_BUTTON_QUERY =
-  '[aria-label="Remove message"],[aria-label="Remove Message"]';
+  '[aria-label="Remove message"],[aria-label="Remove Message"],[aria-label="Unsend Message"],[aria-label="Unsend message"]';
 
 // The button used to close the 'message removed' post confirmation.
 OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
