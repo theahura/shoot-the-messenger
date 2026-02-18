@@ -38,9 +38,8 @@ REMOVE_BUTTON_QUERY =
 OKAY_BUTTON_QUERY = '[aria-label="Okay"]';
 
 COULDNT_REMOVE_QUERY = '._3quh._30yy._2t_._5ixy.layerCancel';
-REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"],[aria-label="Remove"]';
-CANCEL_CONFIRMATION_QUERY =
-  '[aria-label="Who do you want to unsend this message for?"] :not([aria-disabled="true"])[aria-label="Cancel"]';
+REMOVE_CONFIRMATION_QUERY = '[aria-label="Unsend"]:not([aria-disabled="true"]),[aria-label="Remove"]:not([aria-disabled="true"])';
+CANCEL_CONFIRMATION_QUERY = '[aria-label="Cancel"]:not([aria-disabled="true"])';
 
 // The loading animation.
 LOADING_QUERY = '[role="main"] svg[aria-valuetext="Loading..."]';
@@ -100,22 +99,52 @@ function getScroller() {
 
   let el;
   try {
-    // Try the new role-based selectors first, then legacy class-based ones.
-    el =
-      document.querySelector(MESSAGE_ROW_QUERY) ??
-      document.querySelector(MESSAGE_ROW_FALLBACK_QUERY) ??
-      document.querySelector(MY_ROW_QUERY) ??
-      getUnsentMessages()[0];
-    // Walk up the DOM tree to find the scrollable container.
-    // Use scrollHeight > clientHeight instead of scrollTop === 0 because
-    // scrollTop can be 0 when the user hasn't scrolled yet.
-    while (
-      !('scrollTop' in el) ||
-      el.scrollHeight <= el.clientHeight
-    ) {
-      console.log('Traversing tree to find scroller...', el);
-      el = el.parentElement;
+    // Primary: walk DOWN from [role="grid"] through first-children looking for
+    // the first element that is actually configured to scroll (overflow-y:
+    // auto|scroll) and has overflow content. The Messenger scroll container is
+    // a grandchild of the grid and this approach works even when message rows
+    // are virtualized (absent from the DOM).
+    const grid =
+      document.querySelector('[role="main"] [role="grid"]') ??
+      document.querySelector('[role="grid"]');
+    if (grid) {
+      let cur = grid.firstElementChild;
+      while (cur) {
+        const ov = window.getComputedStyle(cur).overflowY;
+        if (
+          (ov === 'auto' || ov === 'scroll') &&
+          cur.scrollHeight > cur.clientHeight
+        ) {
+          el = cur;
+          break;
+        }
+        cur = cur.firstElementChild;
+      }
     }
+
+    // Fallback: walk UP from any message row that happens to be rendered.
+    if (!el) {
+      let cur =
+        document.querySelector('[role="row"]') ??
+        document.querySelector(MESSAGE_ROW_QUERY) ??
+        document.querySelector(MESSAGE_ROW_FALLBACK_QUERY) ??
+        document.querySelector(MY_ROW_QUERY) ??
+        getUnsentMessages()[0];
+      while (cur) {
+        const ov = window.getComputedStyle(cur).overflowY;
+        if (
+          (ov === 'auto' || ov === 'scroll') &&
+          cur.scrollHeight > cur.clientHeight
+        ) {
+          el = cur;
+          break;
+        }
+        console.log('Traversing tree to find scroller...', cur);
+        cur = cur.parentElement;
+      }
+    }
+
+    if (!el) throw new Error('No scrollable parent found');
   } catch (e) {
     alert(
       'Could not find scroller. This normally happens because you do not ' +
@@ -165,16 +194,22 @@ async function prepareDOMForRemoval() {
 }
 
 async function getAllMessages() {
-  // Get all ... buttons that let you select 'more' for all messages you sent.
-  // Note: getUnsentMessages() is intentionally excluded here — "You unsent a
-  // message" placeholders are system notifications that cannot be unsent again
-  // and would cause infinite retry loops (#136). They are still used in
-  // getScroller() for scroll-parent detection.
-  // Prefer role-based selectors; fall back to legacy class-based ones.
-  let elementsToUnsend = [
-    ...document.querySelectorAll(MESSAGE_ROW_QUERY),
-    ...document.querySelectorAll(MESSAGE_ROW_FALLBACK_QUERY),
-  ];
+  // Use [role="row"]:has([data-scope="messages_table"]) to capture ALL actual
+  // message rows — both the current user's and other participants'. This lets
+  // group-chat admins remove anyone's messages. Date-separator rows and other
+  // non-message rows don't contain [data-scope="messages_table"] so they are
+  // excluded. Role-based and legacy class-based selectors are kept as fallbacks.
+  // Note: getUnsentMessages() is intentionally excluded — "You unsent a message"
+  // placeholders cannot be unsent again and would cause infinite retry loops (#136).
+  const allRows = document.querySelectorAll(
+    '[role="row"]:has([data-scope="messages_table"])',
+  );
+  let elementsToUnsend = allRows.length
+    ? [...allRows]
+    : [
+        ...document.querySelectorAll(MESSAGE_ROW_QUERY),
+        ...document.querySelectorAll(MESSAGE_ROW_FALLBACK_QUERY),
+      ];
   if (elementsToUnsend.length === 0) {
     elementsToUnsend = [...document.querySelectorAll(MY_ROW_QUERY)];
   }
@@ -240,7 +275,13 @@ async function unsendAllVisibleMessages() {
     await sleep(500);
     const removeButton = document.querySelectorAll(REMOVE_BUTTON_QUERY)[0];
     if (!removeButton) {
+      // Close the open More menu before skipping, otherwise it stays open and
+      // blocks interaction with the next message.
       console.log('No removeButton found! Skipping holder: ', el);
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+      await sleep(200);
       continue;
     }
 
@@ -260,7 +301,7 @@ async function unsendAllVisibleMessages() {
         'Skipping unsend because we are in debug mode.',
         unsendButton,
       );
-      cancelButton.click();
+      cancelButton?.click();
     } else if (!unsendButton) {
       console.log('No unsendButton found! Skipping holder: ', el);
       if (cancelButton) {
@@ -375,6 +416,11 @@ async function removeHandler() {
   DELAY = localStorage.getItem(delayKey) ?? DELAY;
   console.log('Sleeping to allow the page to load fully...');
   await sleep(10000); // give the page a bit to fully load.
+
+  // Scroll to the bottom first so we always start from the newest message.
+  const scroller = getScroller();
+  scroller.scrollTop = scroller.scrollHeight;
+  await sleep(2000);
 
   const status = await deleteAllRunner(RUNNER_COUNT);
 

@@ -22,12 +22,16 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   });
 });
 
-// Make sure the user is using messenger.com.
+// Make sure the user is using messenger.com or facebook.com/messages.
 const messengers = [
   'https://www.messenger.com',
   'http://www.messenger.com',
   'https://messenger.com/',
   'http://messenger.com/',
+  'https://www.facebook.com/messages',
+  'http://www.facebook.com/messages',
+  'https://facebook.com/messages',
+  'http://facebook.com/messages',
 ];
 chrome.tabs.query(
   {
