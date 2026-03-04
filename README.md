@@ -36,11 +36,15 @@ If you want the latest version, you can git clone the repo and install it as an 
 5) Go to messenger.com and click on a thread you want to delete. Click the extension, hit remove, and hopefully things happen.
 
 # How to Use
-1) Go to messenger.com
+1) Go to messenger.com **or** facebook.com/messages
 2) Open the messenger chain that you want to delete
 3) Click the extension and hit remove messages
 4) Leave the tab running. If you want to keep using the web on your computer, open a new browser.
 5) If you start getting hit with rate limiting by Facebook (generally an error, 'Cannot unsend at this time'), increase the `Rate limit pause` time in the Extension popup. The default is 5 seconds.
+
+### facebook.com/messages support
+
+Starting April 2026, Meta is redirecting `messenger.com` traffic to `facebook.com/messages`. Shoot the Messenger now works on both domains. If you are using a group chat and are a **group admin**, the extension will also attempt to remove messages sent by other participants.
 
 ### Misc notes.
 
