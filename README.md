@@ -1,10 +1,8 @@
 ![Shoot the Messenger Icon](/icon.png)
 
-<a href="https://www.buymeacoffee.com/theahura" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+# LOOKING FOR ACTIVE MAINTAINERS
 
-### Help! The extension is broken!
-
-Don't panic. Facebook changes the messenger UI every now and then, which inevitably breaks this tool. File a bug in the issues panel above. I generally am pretty swamped with other projects, so this tool may be broken for weeks at a time. If you need a really quick turn around, please sponsor some of my time [here](https://www.buymeacoffee.com/theahura/e/136718).
+Hey folks, unfortunately I am no longer able to actively maintain this extension. I'm happy to keep reviewing PRs as they come in, but I can't actually dedicate time to fixing issues and resolving bugs. If you are interested in becoming a maintainer, reach out. 
 
 # What is Shoot the Messenger?
 
